@@ -45,6 +45,8 @@ import java.util.LinkedHashSet;
 import com.edugility.objexj.Pattern;
 import com.edugility.objexj.Matcher;
 
+import org.mvel2.templates.TemplateRuntime;
+
 public class MessageFactory<T> implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -78,6 +80,30 @@ public class MessageFactory<T> implements Serializable {
       this.patterns.put(key, patternSet);
     }
     return patternSet.add(pattern);
+  }
+
+  public boolean addPatterns(final String key, final Iterable<Pattern<T>> patterns) {
+    if (key == null) {
+      throw new IllegalArgumentException("key", new NullPointerException("key"));
+    }
+    if (patterns == null) {
+      throw new IllegalArgumentException("patterns", new NullPointerException("patterns"));
+    }
+    if (this.patterns == null) {
+      this.patterns = new HashMap<String, Set<Pattern<T>>>();
+    }
+    Set<Pattern<T>> patternSet = this.patterns.get(key);
+    if (patternSet == null) {
+      patternSet = new LinkedHashSet<Pattern<T>>();
+      this.patterns.put(key, patternSet);
+    }
+    boolean returnValue = false;
+    for (final Pattern<T> pattern : patterns) {
+      if (pattern != null) {
+        returnValue = patternSet.add(pattern) || returnValue;
+      }
+    }
+    return returnValue;
   }
 
   public boolean removePattern(final String key, final Pattern<T> pattern) {
@@ -116,6 +142,18 @@ public class MessageFactory<T> implements Serializable {
     }
   }
 
+  public Locale getLocale() {
+    Locale locale = null;
+    final ResourceBundle rb = this.getResourceBundle();
+    if (rb != null) {
+      locale = rb.getLocale();
+    }
+    if (locale == null) {
+      locale = Locale.getDefault();
+    }
+    return locale;
+  }
+
   public ResourceBundle getResourceBundle() {
     return this.rb;
   }
@@ -124,6 +162,43 @@ public class MessageFactory<T> implements Serializable {
     this.rb = rb;
   }
 
+  /**
+   * Formats or transforms the supplied {@code rawMessage} {@link
+   * Object} in some way, perhaps by using the information stored as
+   * part of the supplied {@link Matcher}.
+   *
+   * <p>This implementation checks to see if the supplied {@code
+   * rawMessage} is an instance of {@link String}.  If so, it is
+   * treated as an <a href="">MVEL</a> <a
+   * href="http://mvel.codehaus.org/Templating+Guide">template</a>.
+   * The template is interpolated using all the capture groups and
+   * {@linkplain Matcher#getVariables() variables} that the supplied
+   * {@link Matcher} is capable of providing.</p>
+   *
+   * <p>Specifically, <a
+   * href="http://mvel.codehaus.org/MVEL+2.0+Orb+Tags">orb tags</a>
+   * may have bodies that reference the {@linkplain
+   * Matcher#getVariables() variables contained by the supplied
+   * <tt>Matcher</tt>}, as well as {@linkplain Matcher#group(int) its
+   * capture groups}.  Capture group variable references begin with
+   * the {@code $} character, so the following orb tag would return a
+   * {@link List} representing the full match:</p>
+   *
+   * <blockquote><tt>@{$0}</tt></blockquote>
+   *
+   * @param rawMessage the unformatted message as returned by the
+   * {@link #getObject(List)} method; may be {@code null}
+   *
+   * @param matcher the {@link Matcher} that was used by the {@link
+   * #getObject(List)} method in producing the {@code rawMessage}
+   * parameter value; may be {@code null}
+   *
+   * @return a formatted version of the supplied {@code rawMessage},
+   * which may simply be the supplied {@code rawMessage} if no formatting
+   * could be performed
+   *
+   * @see TemplateRuntime
+   */
   protected Object format(final Object rawMessage, final Matcher<T> matcher) {
     Object returnValue = rawMessage;
     if (rawMessage instanceof String) {
@@ -132,10 +207,10 @@ public class MessageFactory<T> implements Serializable {
         final Map<Object, Object> variables = new HashMap<Object, Object>();
         final int groupCount = matcher.groupCount();
         for (int i = 0; i < groupCount; i++) {
-          variables.put(Integer.valueOf(i), matcher.group(i));
+          variables.put(String.format("$%d", Integer.valueOf(i)), matcher.group(i));
         }
         variables.putAll(matcher.getVariables());
-        returnValue = org.mvel2.templates.TemplateRuntime.eval(template, variables);
+        returnValue = TemplateRuntime.eval(template, variables);
       }
     }
     return returnValue;

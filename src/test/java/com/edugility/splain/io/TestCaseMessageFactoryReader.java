@@ -25,7 +25,7 @@
  * The original copy of this license is available at
  * http://www.opensource.org/license/mit-license.html.
  */
-package com.edugility.splain;
+package com.edugility.splain.io;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -39,29 +39,40 @@ import org.junit.Test;
 
 import com.edugility.objexj.Pattern;
 
+import com.edugility.splain.MessageFactory;
+
 import static org.junit.Assert.*;
 
-public class TestCaseMessageFactory {
+public class TestCaseMessageFactoryReader {
 
-  public TestCaseMessageFactory() {
+  public static final String LS = System.getProperty("line.separator", "\n");
+
+  public TestCaseMessageFactoryReader() {
     super();
   }
 
   @Test
   public void test() throws IOException {
-    final String rbSource = String.format("foo = Hi, @{$0}%n");
+    final String rbSource = String.format("foo = Hi, @{$0}%n");    
     assertNotNull(rbSource);
     final StringReader reader = new StringReader(rbSource);
     final PropertyResourceBundle rb = new PropertyResourceBundle(reader);
     reader.close();
-    final MessageFactory<Character> mf = new MessageFactory<Character>(rb);
-    mf.addPattern("foo", Pattern.<Character>compile("java.lang.Character(farg = \"blah\"; return true;)"));
-    final List<Character> input = Arrays.asList('a');
+
+    final StringBuilder source = new StringBuilder("java.lang.Exception(message == \"fred\")");
+    source.append(LS);
+    source.append("--").append(LS);
+    source.append("foo");
+
+    final StringReader sr = new StringReader(source.toString());
+    final MessageFactoryReader r = new MessageFactoryReader(sr);
+    final MessageFactory<Exception> mf = r.read(rb);
+    assertNotNull(mf);
+    final List<Exception> input = Arrays.asList(new Exception("fred"));
     assertNotNull(input);
     assertEquals(1, input.size());
-    assertEquals(Character.valueOf('a'), input.get(0));
     final Object o = mf.getObject(input);
-    assertEquals("Hi, [a]", o);
+    assertEquals("Hi, [java.lang.Exception: fred]", o);
     
   }
 

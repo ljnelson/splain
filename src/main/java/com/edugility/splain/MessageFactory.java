@@ -261,12 +261,13 @@ public class MessageFactory<T> implements Serializable {
   /**
    * Given a {@link List} of {@link Object}s of type {@link
    * MessageFactory T}, matches that {@link List} against all the
-   * {@link Pattern}s that have been {@linkplain #addPattern(String,
-   * Pattern) added} to this {@link MessageFactory} in insertion
-   * order, and, when one of them {@linkplain Matcher#lookingAt() has
-   * a match}, selects and {@linkplain #format(Object, Matcher)
-   * formats} the associated key, {@linkplain #convert(Object)
-   * converts it to a <code>String</code>} and returns the result.
+   * {@link Pattern}s that have been {@linkplain
+   * #addPattern(ResourceBundleKey, Pattern) added} to this {@link
+   * MessageFactory} in insertion order, and, when one of them
+   * {@linkplain Matcher#lookingAt() has a match}, selects and
+   * {@linkplain #format(Object, Matcher) formats} the associated key,
+   * {@linkplain #convert(Object) converts it to a
+   * <code>String</code>} and returns the result.
    *
    * <p>This method may return {@code null}.</p>
    *

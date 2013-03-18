@@ -28,11 +28,15 @@
 package com.edugility.splain.io;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringReader;
+
+import java.sql.SQLException;
 
 import java.text.ParseException;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
@@ -53,6 +57,33 @@ public class TestCaseMessageFactoryReader {
     super();
   }
 
+  public void testPrecedence() throws IOException, ParseException {
+    final InputStreamReader isr = new InputStreamReader(this.getClass().getResource("/MessageCatalog.mc").openStream());
+    final MessageFactoryReader r = new MessageFactoryReader(isr);
+    final MessageFactory<Object> mf = r.read();
+    assertNotNull(mf);
+    isr.close();    
+    
+    final SQLException sqlException = new SQLException("Bottom");
+    final IllegalArgumentException illegalArgumentException = new IllegalArgumentException("Top", sqlException);
+
+    List<Object> input = Arrays.<Object>asList(illegalArgumentException, sqlException);
+    assertNotNull(input);
+    
+    String message = mf.getMessage(input);
+    assertNotNull(message);
+    assertEquals("There was a database exception.", message);
+
+    final IOException io = new IOException("boom");
+    input = Arrays.<Object>asList(sqlException, io);
+    assertNotNull(input);
+
+    message = mf.getMessage(input);
+    assertNotNull(message);
+    assertEquals("An unknown error occurred", message);
+
+  }
+
   @Test
   public void test() throws IOException, ParseException {
     final String rbSource = String.format("foo = Hi, @{$0}%n");    
@@ -64,11 +95,13 @@ public class TestCaseMessageFactoryReader {
     final StringBuilder source = new StringBuilder("java.lang.Exception(message == \"fred\")");
     source.append(LS);
     source.append("--").append(LS);
-    source.append("/foo");
+    source.append("/foo").append(LS);
+    source.append(LS);
+    
 
     final StringReader sr = new StringReader(source.toString());
-    final MessageFactoryReader r = new MessageFactoryReader(sr);
-    final MessageFactory<Exception> mf = r.read(rb);
+    final MessageFactoryReader r = new MessageFactoryReader(sr, rb);
+    final MessageFactory<Exception> mf = r.read();
     assertNotNull(mf);
     final List<Exception> input = Arrays.asList(new Exception("fred"));
     assertNotNull(input);

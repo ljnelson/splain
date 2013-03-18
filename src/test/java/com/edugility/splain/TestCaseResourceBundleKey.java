@@ -35,6 +35,7 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
@@ -81,6 +82,29 @@ public class TestCaseResourceBundleKey {
     assertTrue(rb.containsKey("key"));
     assertEquals("value", rb.getString("key"));
     assertEquals("value", rbk.getObject());
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testBundleOnlyKey() {
+    ResourceBundleKey.valueOf("a.b.c.d/");
+  }
+
+  @Test(expected = MissingResourceException.class)
+  public void testMissingResource() {
+    ResourceBundleKey.valueOf("a.b.c.d/nonexistent");
+  }
+
+  @Test
+  public void testNoBundleBadKey() {
+    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("xyz");
+    assertNotNull(rbk);
+    assertEquals("xyz", rbk.getKey());
+    assertEquals("xyz", rbk.getObject());
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testSlashOnly() {
+    ResourceBundleKey.valueOf("/");
   }
 
 }

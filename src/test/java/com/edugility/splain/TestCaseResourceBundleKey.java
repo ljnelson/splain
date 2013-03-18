@@ -46,11 +46,11 @@ import com.edugility.objexj.Pattern;
 
 import static org.junit.Assert.*;
 
-public class TestCaseMessageFactory {
+public class TestCaseResourceBundleKey {
 
   private static ResourceBundle rb;
 
-  public TestCaseMessageFactory() {
+  public TestCaseResourceBundleKey() {
     super();
   }
 
@@ -64,19 +64,23 @@ public class TestCaseMessageFactory {
   }
 
   @Test
-  public void test() throws IOException, ParseException {
-    final ResourceBundleKey rbk = ResourceBundleKey.valueOf(rb, "/foo");
+  public void testValueOf() throws IOException, ParseException {
+    final ResourceBundleKey rbk = ResourceBundleKey.valueOf(rb, "foo");
     assertNotNull(rbk);
+    assertEquals("Hi, @{$0[0]}, your farg is @{farg}  ", rbk.getObject());
+  }
 
-    final MessageFactory<Character> mf = new MessageFactory<Character>();
-    mf.addPattern(rbk, Pattern.<Character>compile("java.lang.Character(farg = \"blah\"; return true;)"));
-    final List<Character> input = Arrays.asList('a');
-    assertNotNull(input);
-    assertEquals(1, input.size());
-    assertEquals(Character.valueOf('a'), input.get(0));
-    final String message = mf.getMessage(input);
-    assertEquals("Hi, a, your farg is blah  ", message);
-    
+  @Test
+  public void testCompositeBundleKey() {
+    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("a.b.c.d/key");
+    assertNotNull(rbk);
+    final ResourceBundle rb = rbk.getResourceBundle();
+    assertNotNull(rb);
+    final String key = rbk.getKey();
+    assertEquals("key", key);
+    assertTrue(rb.containsKey("key"));
+    assertEquals("value", rb.getString("key"));
+    assertEquals("value", rbk.getObject());
   }
 
 }

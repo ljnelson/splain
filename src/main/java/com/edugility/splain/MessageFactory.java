@@ -27,18 +27,18 @@
  */
 package com.edugility.splain;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.ResourceBundle.Control;
 import java.util.Set;
 import java.util.LinkedHashSet;
 
@@ -47,42 +47,97 @@ import com.edugility.objexj.Matcher;
 
 import org.mvel2.templates.TemplateRuntime;
 
+/**
+ * A factory for localized messages appropriate for object graphs.
+ *
+ * @param <T> the type of {@link Object} used by the {@link
+ * #getMessage(List)} method; the type of {@link Object} used by the
+ * {@link Pattern}s that help select messages
+ *
+ * @author <a href="http://about.me/lairdnelson"
+ * target="_parent">Laird Nelson</a>
+ */
 public class MessageFactory<T> implements Serializable {
-
+  
+  /**
+   * The version of this class for {@linkplain Serializable
+   * serialization purposes}.
+   */
   private static final long serialVersionUID = 1L;
   
-  private ResourceBundle rb;
+  /**
+   * A {@link Map} of {@link Set}s of {@link Pattern}s, indexed by
+   * {@link ResourceBundleKey}s.
+   *
+   * <p>This field may be {@code null}.</p>
+   */
+  private Map<ResourceBundleKey, Set<Pattern<T>>> patterns;
 
-  private Map<String, Set<Pattern<T>>> patterns;
-
+  /**
+   * Creates a new {@link MessageFactory}.
+   */
   public MessageFactory() {
     super();
   }
-
-  public MessageFactory(final ResourceBundle rb) {
-    super();
-    this.setResourceBundle(rb);
-  }
   
-  public boolean addPattern(final String key, final Pattern<T> pattern) {
+  /**
+   * Adds a {@link Pattern} to the {@link Set} of {@link Pattern}s
+   * indexed under the supplied {@link ResourceBundleKey}.  If no such
+   * {@link Set} exists, one is created whose sole contents are the
+   * supplied {@link Pattern}.
+   *
+   * @param key the {@link ResourceBundleKey} under which the supplied
+   * {@link Pattern} is to be indexed; must not be {@code null}
+   *
+   * @param pattern the {@link Pattern} to add; must not be {@code
+   * null}
+   *
+   * @return {@code true} if and only if the supplied {@link Pattern}
+   * was indexed under the supplied {@link ResourceBundleKey}; {@code
+   * false} if, for example, it was already present
+   *
+   * @exception IllegalArgumentException if {@code key} or {@code
+   * pattern} is {@code null}
+   *
+   * @see Pattern
+   *
+   * @see ResourceBundleKey
+   *
+   * @see #addPatterns(ResourceBundleKey, Iterable)
+   */
+  public final boolean addPattern(final ResourceBundleKey key, final Pattern<T> pattern) {
     if (key == null) {
       throw new IllegalArgumentException("key", new NullPointerException("key"));
     }
     if (pattern == null) {
-      throw new IllegalArgumentException("pattern", new NullPointerException("pattern"));
+      throw new IllegalArgumentException("pattern", new NullPointerException("patterns"));
     }
-    if (this.patterns == null) {
-      this.patterns = new HashMap<String, Set<Pattern<T>>>();
-    }
-    Set<Pattern<T>> patternSet = this.patterns.get(key);
-    if (patternSet == null) {
-      patternSet = new LinkedHashSet<Pattern<T>>();
-      this.patterns.put(key, patternSet);
-    }
-    return patternSet.add(pattern);
+    return this.addPatterns(key, Collections.singleton(pattern));
   }
 
-  public boolean addPatterns(final String key, final Iterable<Pattern<T>> patterns) {
+  /**
+   * Adds the supplied {@link Iterable} of {@link Pattern}s to the
+   * {@link Set} of {@link Pattern}s indexed under the supplied {@code
+   * key}.
+   *
+   * @param key the {@link ResourceBundleKey} under which the {@link
+   * Pattern} is to be stored; must not be {@code null}
+   *
+   * @param patterns an {@link Iterable} of {@link Pattern}s to add;
+   * no references are kept to this object; must not be {@code null}
+   *
+   * @return {@code true} if the set of {@link Pattern}s already
+   * indexed under the supplied {@code key}&mdash;if any&mdash;was
+   * changed as a result of this call; {@code false} otherwise
+   *
+   * @exception IllegalArgumentException if either parameter is {@code
+   * null}
+   *
+   * @see Pattern
+   *
+   * @see ResourceBundleKey
+   */
+  public boolean addPatterns(final ResourceBundleKey key, final Iterable<Pattern<T>> patterns) {
     if (key == null) {
       throw new IllegalArgumentException("key", new NullPointerException("key"));
     }
@@ -90,7 +145,7 @@ public class MessageFactory<T> implements Serializable {
       throw new IllegalArgumentException("patterns", new NullPointerException("patterns"));
     }
     if (this.patterns == null) {
-      this.patterns = new HashMap<String, Set<Pattern<T>>>();
+      this.patterns = new LinkedHashMap<ResourceBundleKey, Set<Pattern<T>>>();
     }
     Set<Pattern<T>> patternSet = this.patterns.get(key);
     if (patternSet == null) {
@@ -106,91 +161,72 @@ public class MessageFactory<T> implements Serializable {
     return returnValue;
   }
 
-  public boolean removePattern(final String key, final Pattern<T> pattern) {
+  /**
+   * Returns a non-{@code null}, {@linkplain
+   * Collections#unmodifiableSet(Set) unmodifiable <code>Set</code> view}
+   * of {@link Pattern}s indexed under the supplied {@code key}.
+   *
+   * <p>This method never returns {@code null}.</p>
+   *
+   * @param key the {@link ResourceBundleKey} whose {@link Pattern}s
+   * are to be retrieved; must not be {@code null}
+   *
+   * @return a non-{@code null}, {@linkplain
+   * Collections#unmodifiableSet(Set) unmodifiable <code>Set</code> view}
+   * of {@link Pattern}s indexed under the supplied {@code key}
+   *
+   * @exception IllegalArgumentException if {@code key} is {@code
+   * null}
+   */
+  public Set<Pattern<T>> getPatterns(final ResourceBundleKey key) {
     if (key == null) {
       throw new IllegalArgumentException("key", new NullPointerException("key"));
     }
-    if (pattern == null) {
-      throw new IllegalArgumentException("pattern", new NullPointerException("pattern"));
-    }
-    boolean returnValue = false;
-    if (this.patterns != null && !this.patterns.isEmpty()) {
-      final Set<Pattern<T>> patterns = this.getPatterns(key);
-      returnValue = patterns != null && !patterns.isEmpty() && patterns.remove(pattern);
+    final Set<Pattern<T>> returnValue;
+    if (this.patterns == null || this.patterns.isEmpty() || !this.patterns.containsKey(key)) {
+      returnValue = Collections.emptySet();
+    } else {
+      final Set<Pattern<T>> set = this.patterns.get(key);
+      if (set == null || set.isEmpty()) {
+        returnValue = Collections.emptySet();
+      } else {
+        returnValue = Collections.unmodifiableSet(set);
+      }
     }
     return returnValue;
-  }
-
-  public void removePatterns(final String key) {
-    if (key == null) {
-      throw new IllegalArgumentException("key", new NullPointerException("key"));
-    }
-    if (this.patterns != null) {
-      this.patterns.remove(key);
-    }
-  }
-
-  public Set<Pattern<T>> getPatterns(final String key) {
-    if (key == null) {
-      throw new IllegalArgumentException("key", new NullPointerException("key"));
-    }
-    final Set<Pattern<T>> set = this.patterns.get(key);
-    if (set == null || set.isEmpty()) {
-      return Collections.emptySet();
-    } else {
-      return set;
-    }
-  }
-
-  public Locale getLocale() {
-    Locale locale = null;
-    final ResourceBundle rb = this.getResourceBundle();
-    if (rb != null) {
-      locale = rb.getLocale();
-    }
-    if (locale == null) {
-      locale = Locale.getDefault();
-    }
-    return locale;
-  }
-
-  public ResourceBundle getResourceBundle() {
-    return this.rb;
-  }
-
-  public void setResourceBundle(final ResourceBundle rb) {
-    this.rb = rb;
   }
 
   /**
    * Formats or transforms the supplied {@code rawMessage} {@link
    * Object} in some way, perhaps by using the information stored as
-   * part of the supplied {@link Matcher}.
+   * part of the supplied {@link Matcher}, and returns the formatted
+   * or transformed {@link Object}.
    *
    * <p>This implementation checks to see if the supplied {@code
-   * rawMessage} is an instance of {@link String}.  If so, it is
-   * treated as an <a href="">MVEL</a> <a
+   * rawMessage} is an instance of {@link CharSequence}.  If so, it is
+   * treated as an <a href="http://mvel.codehaus.org/">MVEL</a> <a
    * href="http://mvel.codehaus.org/Templating+Guide">template</a>.
-   * The template is interpolated using all the capture groups and
-   * {@linkplain Matcher#getVariables() variables} that the supplied
-   * {@link Matcher} is capable of providing.</p>
+   * The template is interpolated using all the {@linkplain
+   * Matcher#group(int) capture groups} and {@linkplain
+   * Matcher#getVariables() variables} that the supplied {@link
+   * Matcher} is capable of providing.</p>
    *
    * <p>Specifically, <a
    * href="http://mvel.codehaus.org/MVEL+2.0+Orb+Tags">orb tags</a>
    * may have bodies that reference the {@linkplain
    * Matcher#getVariables() variables contained by the supplied
-   * <tt>Matcher</tt>}, as well as {@linkplain Matcher#group(int) its
+   * <code>Matcher</code>}, as well as {@linkplain Matcher#group(int) its
    * capture groups}.  Capture group variable references begin with
    * the {@code $} character, so the following orb tag would return a
    * {@link List} representing the full match:</p>
    *
-   * <blockquote><tt>@{$0}</tt></blockquote>
+   * <blockquote><code>@{$0}</code></blockquote>
    *
    * @param rawMessage the unformatted message as returned by the
-   * {@link #getObject(List)} method; may be {@code null}
+   * {@link #getMessage(List)} method; may be {@code null}
    *
    * @param matcher the {@link Matcher} that was used by the {@link
-   * #getObject(List)} method in producing the {@code rawMessage}
+   * #getMessage(List)} method in producing the {@code rawMessage}
    * parameter value; may be {@code null}
    *
    * @return a formatted version of the supplied {@code rawMessage},
@@ -198,12 +234,14 @@ public class MessageFactory<T> implements Serializable {
    * could be performed
    *
    * @see TemplateRuntime
+   *
+   * @see #getMessage(List)
    */
   protected Object format(final Object rawMessage, final Matcher<T> matcher) {
-    Object returnValue = rawMessage;
-    if (rawMessage instanceof String) {
-      final String template = (String)rawMessage;
-      if (matcher != null) {
+    final Object returnValue;
+    if (rawMessage instanceof CharSequence) {
+      final String template = rawMessage.toString();
+      if (template != null && matcher != null) {
         final Map<Object, Object> variables = new HashMap<Object, Object>();
         final int groupCount = matcher.groupCount();
         for (int i = 0; i < groupCount; i++) {
@@ -211,31 +249,95 @@ public class MessageFactory<T> implements Serializable {
         }
         variables.putAll(matcher.getVariables());
         returnValue = TemplateRuntime.eval(template, variables);
+      } else {
+        returnValue = rawMessage;
       }
+    } else {
+      returnValue = null;
     }
     return returnValue;
   }
 
-  public Object getObject(final List<T> input) {
-    final Object returnValue;
+  /**
+   * Given a {@link List} of {@link Object}s of type {@link
+   * MessageFactory T}, matches that {@link List} against all the
+   * {@link Pattern}s that have been {@linkplain #addPattern(String,
+   * Pattern) added} to this {@link MessageFactory} in insertion
+   * order, and, when one of them {@linkplain Matcher#lookingAt() has
+   * a match}, selects and {@linkplain #format(Object, Matcher)
+   * formats} the associated key, {@linkplain #convert(Object)
+   * converts it to a <code>String</code>} and returns the result.
+   *
+   * <p>This method may return {@code null}.</p>
+   *
+   * @param input the {@link List} of {@link Object}s of type {@link
+   * MessageFactory T} to match; may be {@code null}
+   *
+   * @return a {@linkplain #convert(Object) converted} and {@linkplain
+   * #format(Object, Matcher) formatted} message, or {@code null}
+   *
+   * @see #convert(Object)
+   *
+   * @see #format(Object, Matcher)
+   */
+  public String getMessage(final List<T> input) {
+    final String returnValue;
     final Selector<T> selector = this.getSelector(input);
     if (selector == null) {
       returnValue = null;
     } else {
-      final ResourceBundle rb = this.getResourceBundle();
-      if (rb == null) {
-        returnValue = selector.getKey();
+      final ResourceBundleKey key = selector.getKey();
+      if (key == null) {
+        returnValue = this.convert(this.format(null, selector.getMatcher()));
       } else {
-        returnValue = this.format(rb.getObject(selector.getKey()), selector.getMatcher());
+        returnValue = this.convert(this.format(key.getObject(), selector.getMatcher()));
       }
     }    
     return returnValue;
   }
 
-  public Object getObject(final List<T> input, final Object defaultValue) {
-    Object returnValue = null;
+  /**
+   * Converts the supplied {@link Object} into a {@link String}.  The
+   * default implementation of this method returns {@code null} if the
+   * supplied {@link Object} is {@code null}, or the result of
+   * invoking {@link Object#toString()} on it if it is not.
+   *
+   * <p>This method may return {@code null}.</p>
+   *
+   * @param object the {@link Object} to convert; may be {@code null}
+   *
+   * @return a {@link String} that is the result of converting the
+   * supplied {@link Object}, or {@code null}
+   */
+  protected String convert(final Object object) {
+    final String returnValue;
+    if (object == null) {
+      returnValue = null;
+    } else {
+      returnValue = object.toString();
+    }
+    return returnValue;
+  }
+
+  /**
+   * Calls {@link #getMessage(List)}, and if the return value is {@code
+   * null}, returns the supplied {@code defaultValue} parameter as the
+   * return value instead.
+   *
+   * <p>This method may return {@code null}.</p>
+   *
+   * <p>This method suppresses any {@link MissingResourceException}s
+   * thrown by {@link #getMessage(List)} and returns the supplied
+   * {@code defaultValue} parameter in such cases.</p>
+   *
+   * @return a formatted message, or the {@code defaultValue}
+   * parameter, or {@code null} if the {@code defaultValue} parameter
+   * is {@code null} itself
+   */
+  public String getMessage(final List<T> input, final String defaultValue) {
+    String returnValue = null;
     try {
-      returnValue = this.getObject(input);
+      returnValue = this.getMessage(input);
     } catch (final MissingResourceException oops) {
       // TODO: log
       returnValue = null;
@@ -246,23 +348,39 @@ public class MessageFactory<T> implements Serializable {
     return returnValue;
   }
 
+  /**
+   * Returns a {@link Selector} for the supplied {@link List} of
+   * {@link Object}s of type {@link MessageFactory T}.
+   *
+   * <p>This method may return {@code null}.</p>
+   *
+   * @param input the {@link List} of {@link Object}s of type {@link
+   * MessageFactory T} for which a {@link Selector} will be returned;
+   * may be {@code null}; will be passed to the {@link
+   * Pattern#matcher(List)} method
+   *
+   * @return a {@link Selector}, or {@code null}
+   */
   final Selector<T> getSelector(final List<T> input) {
     Selector<T> returnValue = null;
     if (this.patterns != null && !this.patterns.isEmpty()) {
-      final Set<String> keys = this.patterns.keySet();
-      if (keys != null && !keys.isEmpty()) {
-        KEY_LOOP:
-        for (final String key : keys) {
-          if (key != null) {
-            final Set<Pattern<T>> patterns = this.getPatterns(key);
-            if (patterns != null && !patterns.isEmpty()) {
-              for (final Pattern<T> pattern : patterns) {
-                if (pattern != null) {
-                  final Matcher<T> matcher = pattern.matcher(input);
-                  assert matcher != null;
-                  if (matcher.lookingAt()) {
-                    returnValue = new Selector<T>(key, matcher);
-                    break KEY_LOOP;
+      final Set<Entry<ResourceBundleKey, Set<Pattern<T>>>> entrySet = this.patterns.entrySet();
+      if (entrySet != null && !entrySet.isEmpty()) {
+        ENTRY_SET_LOOP:
+        for (final Entry<ResourceBundleKey, Set<Pattern<T>>> entry : entrySet) {
+          if (entry != null) {
+            final ResourceBundleKey key = entry.getKey();
+            if (key != null) {
+              final Set<Pattern<T>> patterns = entry.getValue();
+              if (patterns != null && !patterns.isEmpty()) {
+                for (final Pattern<T> pattern : patterns) {
+                  if (pattern != null) {
+                    final Matcher<T> matcher = pattern.matcher(input);
+                    assert matcher != null;
+                    if (matcher.lookingAt()) {
+                      returnValue = new Selector<T>(key, matcher);
+                      break ENTRY_SET_LOOP;
+                    }
                   }
                 }
               }
@@ -274,13 +392,41 @@ public class MessageFactory<T> implements Serializable {
     return returnValue;
   }
 
+  /**
+   * A simple tuple that combines a {@link ResourceBundle}, a {@link
+   * String} key and a {@link Matcher}.
+   *
+   * @author <a href="http://about.me/lairdnelson"
+   * target="_parent">Laird Nelson</a>
+   *
+   * @see MessageFactory#getSelector(List)
+   */
   private static final class Selector<T> {
 
-    private final String key;
+    /**
+     * The {@link Selector}'s key.  This field is never {@code null}.
+     */
+    private final ResourceBundleKey key;
 
+    /**
+     * This {@link Selector}'s {@link Matcher}.  This field is never
+     * {@code null}.
+     */
     private final Matcher<T> matcher;
 
-    private Selector(final String key, final Matcher<T> matcher) {
+    /**
+     * Creates a new {@link Selector}.
+     *
+     * @param key the key portion of this {@link Selector}; must not
+     * be {@code null}
+     *
+     * @param matcher the {@link Matcher} portion of this {@link
+     * Selector}; must not be {@code null}
+     *
+     * @exception IllegalArgumentException if either parameter is
+     * {@code null}
+     */
+    private Selector(final ResourceBundleKey key, final Matcher<T> matcher) {
       super();
       if (key == null) {
         throw new IllegalArgumentException("key", new NullPointerException("key"));
@@ -292,12 +438,95 @@ public class MessageFactory<T> implements Serializable {
       this.matcher = matcher;
     }
 
-    public final String getKey() {
+    /**
+     * Returns the key of this {@link Selector}.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * @return the non-{@code null} key of this {@link Selector}
+     */
+    public final ResourceBundleKey getKey() {
       return this.key;
     }
 
+    /**
+     * Returns the {@link Matcher} of this {@link Selector}.
+     *
+     * <p>This method never returns {@code null}.</p>
+     *
+     * @return the non-{@code null} {@link Matcher} portion of this
+     * {@link Selector}
+     */ 
     public final Matcher<T> getMatcher() {
       return this.matcher;
+    }
+
+    /**
+     * Returns a hashcode for this {@link Selector}.
+     *
+     * @return a hashcode for this {@link Selector}
+     */
+    @Override
+    public int hashCode() {
+      int result = 17;
+      
+      final Object key = this.getKey();
+      int c;
+      if (key == null) {
+        c = 0;
+      } else {
+        c = key.hashCode();
+      }
+      result = 37 * result + c;
+
+      final Object matcher = this.getMatcher();
+      if (matcher == null) {
+        c = 0;
+      } else {
+        c = matcher.hashCode();
+      }
+      result = 37 * result + c;
+
+      return result;
+    }
+
+    /**
+     * Returns {@code true} if the supplied {@link Object} is equal to
+     * this {@link Selector}; {@code false} otherwise.
+     *
+     * @param other the {@link Object} to compare; may be {@code null}
+     *
+     * @return {@code true} if the supplied {@link Object} is equal to
+     * this {@link Selector}; {@code false} otherwise
+     */
+    @Override
+    public boolean equals(final Object other) {
+      if (other == this) {
+        return true;
+      } else if (other != null && this.getClass().equals(other.getClass())) {
+        final Selector<?> him = (Selector<?>)other;
+        final Object key = this.getKey();
+        if (key == null) {
+          if (him.getKey() != null) {
+            return false;
+          }
+        } else if (!key.equals(him.getKey())) {
+          return false;
+        }
+
+        final Object matcher = this.getMatcher();
+        if (matcher == null) {
+          if (him.getMatcher() != null) {
+            return false;
+          }
+        } else if (!matcher.equals(him.getMatcher())) {
+          return false;
+        }
+
+        return true;
+      } else {
+        return false;
+      }
     }
 
   }

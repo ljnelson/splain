@@ -30,6 +30,8 @@ package com.edugility.splain.io;
 import java.io.IOException;
 import java.io.StringReader;
 
+import java.text.ParseException;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.PropertyResourceBundle;
@@ -52,7 +54,7 @@ public class TestCaseMessageFactoryReader {
   }
 
   @Test
-  public void test() throws IOException {
+  public void test() throws IOException, ParseException {
     final String rbSource = String.format("foo = Hi, @{$0}%n");    
     assertNotNull(rbSource);
     final StringReader reader = new StringReader(rbSource);
@@ -62,7 +64,7 @@ public class TestCaseMessageFactoryReader {
     final StringBuilder source = new StringBuilder("java.lang.Exception(message == \"fred\")");
     source.append(LS);
     source.append("--").append(LS);
-    source.append("foo");
+    source.append("/foo");
 
     final StringReader sr = new StringReader(source.toString());
     final MessageFactoryReader r = new MessageFactoryReader(sr);
@@ -71,7 +73,7 @@ public class TestCaseMessageFactoryReader {
     final List<Exception> input = Arrays.asList(new Exception("fred"));
     assertNotNull(input);
     assertEquals(1, input.size());
-    final Object o = mf.getObject(input);
+    final Object o = mf.getMessage(input);
     assertEquals("Hi, [java.lang.Exception: fred]", o);
     
   }

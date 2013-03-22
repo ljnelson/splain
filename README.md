@@ -15,7 +15,8 @@ against `List`s of `Object`s to produce rich error messages.
  1. **Message selector.** A message selector is a key into a
     particular [`ResourceBundle`][3] (that also identifies what base
     [`ResourceBundle`][3] it belongs to).  It is represented in code
-    by the [`ResourceBundleKey`][8] class.
+    by the [`ResourceBundleKey`][8] class.  (As it happens, a message
+    selector may also be a simple `String`.)
     
  2. **Message catalog.** A message catalog is an ordered list of
     [`objexj`][2] [`Pattern`][7]s and message selectors that certain
@@ -64,9 +65,38 @@ The resulting `Object`, if it is a `String`, is treated as an
 [MVEL][5] [template][6], and is interpolated using [variables set][10]
 in our `objexj` [pattern][7]s!
 
-### A More Realistic Example
+### More Realistic Examples
 
-Here is an example that 
+#### Matching Deep Exception Chains
+
+    javax.persistence.PersistenceException(msg = message; return true;)
+    --
+    There was a problem in the persistence layer of the application: @{msg}
+    
+Suppose you had a
+[way to expose a `Throwable` and its causal chain as a `List`][11].
+If you handed this `List` to [the `getMessage(List)` method][12], and
+if there were a `PersistenceException` somewhere in the causal chain,
+then the message selector above (in this case a simple string and
+<em>not</em> a key into some further [`ResourceBundle`][3]) would be
+interpolated as an [MVEL][5] [template][6] and its value retrieved.
+
+#### Using Localized Message Selectors
+
+Here's a message catalog that uses a localized message selector:
+
+    java.sql.SQLRecoverableException(ss = sqlState; return true;)
+    --
+    com.myco.MessageCatalog/recoverableSqlError
+
+...and a `PropertyResourceBundle` properties file named
+`com/myco/MessageCatalog.properties`:
+
+    recoverableSqlError: There was a SQL error with a SQLState of @{ss}, but you can recover from it
+
+### More
+
+For more, please see the main [documentation site][13].
 
 [1]: http://about.me/lairdnelson
 [2]: http://ljnelson.github.com/objexj
@@ -75,6 +105,8 @@ Here is an example that
 [5]: http://mvel.codehaus.org/
 [6]: http://mvel.codehaus.org/MVEL+2.0+Templating+Guide
 [7]: http://ljnelson.github.com/objexj/apidocs/com/edugility/objexj/Pattern.html
-[8]: apidocs/com/edugility/splain/ResourceBundleKey.html
-[9]: apidocs/com/edugility/splain/MessageFactory.html
+[8]: http://ljnelson.github.com/splain/apidocs/com/edugility/splain/ResourceBundleKey.html
+[9]: http://ljnelson.github.com/splain/apidocs/com/edugility/splain/MessageFactory.html
 [10]: http://ljnelson.github.com/objexj/apidocs/com/edugility/objexj/Matcher.html#getVariables()
+[11]: http://ljnelson.github.com/edugility-throwables/apidocs/com/edugility/throwables/ThrowableList.html
+[12]: http://ljnelson.github.com/splain/apidocs/com/edugility/splain/MessageFactory.html#getMessage(List)

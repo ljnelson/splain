@@ -95,6 +95,16 @@
       <plugins>
 
         <plugin>
+          <groupId>com.github.github</groupId>
+          <artifactId>site-maven-plugin</artifactId>
+          <version>${siteMavenPluginVersion}</version>
+          <configuration>
+            <message>Building site for ${project.artifactId} ${project.version}</message>
+            <server>github</server>
+          </configuration>
+        </plugin>
+
+        <plugin>
           <artifactId>maven-assembly-plugin</artifactId>
           <version>${mavenAssemblyPluginVersion}</version>
         </plugin>
@@ -235,6 +245,21 @@
 
       </plugins>
     </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>com.github.github</groupId>
+        <artifactId>site-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>site</goal>
+            </goals>
+            <phase>site-deploy</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
 
     <resources>
       <resource>

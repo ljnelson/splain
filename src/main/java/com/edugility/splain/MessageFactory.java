@@ -50,12 +50,23 @@ import org.mvel2.templates.TemplateRuntime;
 /**
  * A factory for localized messages appropriate for object graphs.
  *
+ * <p>To use a {@link MessageFactory}, {@linkplain #MessageFactory()
+ * create a new instance} and {@linkplain
+ * #addPatterns(ResourceBundleKey, Iterable) add <code>Pattern</code>s
+ * to it}.  Then pass a {@link List} of items to the {@link
+ * #getMessage(List)} method.</p>
+ *
+ * <p>This class is not safe for concurrent use by multiple {@link
+ * Thread}s.</p>
+ * 
  * @param <T> the type of {@link Object} used by the {@link
  * #getMessage(List)} method; the type of {@link Object} used by the
  * {@link Pattern}s that help select messages
  *
  * @author <a href="http://about.me/lairdnelson"
  * target="_parent">Laird Nelson</a>
+ *
+ * @see #getMessage(List)
  */
 public class MessageFactory<T> implements Serializable {
   
@@ -82,9 +93,17 @@ public class MessageFactory<T> implements Serializable {
   
   /**
    * Adds a {@link Pattern} to the {@link Set} of {@link Pattern}s
-   * indexed under the supplied {@link ResourceBundleKey}.  If no such
-   * {@link Set} exists, one is created whose sole contents are the
-   * supplied {@link Pattern}.
+   * indexed under the supplied {@link ResourceBundleKey} and returns
+   * the full {@link Set} of such {@link Pattern}s.  If no such {@link
+   * Set} exists, one is created whose sole contents are the supplied
+   * {@link Pattern}.
+   *
+   * <p>This method never returns {@code null}.</p>
+   *
+   * <p>{@link Pattern}s may also be added by {@linkplain
+   * #getPatterns(ResourceBundleKey) retrieving a <code>Set</code> of
+   * <code>Pattern</code>s} and {@linkplain Set#add(Object) adding} a
+   * {@link Pattern} to it directly.</p>
    *
    * @param key the {@link ResourceBundleKey} under which the supplied
    * {@link Pattern} is to be indexed; must not be {@code null}
@@ -92,9 +111,8 @@ public class MessageFactory<T> implements Serializable {
    * @param pattern the {@link Pattern} to add; must not be {@code
    * null}
    *
-   * @return {@code true} if and only if the supplied {@link Pattern}
-   * was indexed under the supplied {@link ResourceBundleKey}; {@code
-   * false} if, for example, it was already present
+   * @return the full {@link Set} of {@link Pattern}s indexed under
+   * the supplied {@code key}; never {@code null}
    *
    * @exception IllegalArgumentException if {@code key} or {@code
    * pattern} is {@code null}
@@ -104,8 +122,10 @@ public class MessageFactory<T> implements Serializable {
    * @see ResourceBundleKey
    *
    * @see #addPatterns(ResourceBundleKey, Iterable)
+   *
+   * @see #getPatterns(ResourceBundleKey)
    */
-  public final boolean addPattern(final ResourceBundleKey key, final Pattern<T> pattern) {
+  public final Set<Pattern<T>> addPattern(final ResourceBundleKey key, final Pattern<T> pattern) {
     if (key == null) {
       throw new IllegalArgumentException("key", new NullPointerException("key"));
     }
@@ -118,7 +138,15 @@ public class MessageFactory<T> implements Serializable {
   /**
    * Adds the supplied {@link Iterable} of {@link Pattern}s to the
    * {@link Set} of {@link Pattern}s indexed under the supplied {@code
-   * key}.
+   * key} and returns the full {@link Set} of such {@link Pattern}s
+   * that results from this addition.
+   *
+   * <p>{@link Pattern}s may also be added by {@linkplain
+   * #getPatterns(ResourceBundleKey) retrieving a <code>Set</code> of
+   * <code>Pattern</code>s} and {@linkplain Set#add(Object) adding} a
+   * {@link Pattern} to it directly.</p>
+   *
+   * <p>This method never returns {@code null}.</p>
    *
    * @param key the {@link ResourceBundleKey} under which the {@link
    * Pattern} is to be stored; must not be {@code null}
@@ -126,9 +154,8 @@ public class MessageFactory<T> implements Serializable {
    * @param patterns an {@link Iterable} of {@link Pattern}s to add;
    * no references are kept to this object; must not be {@code null}
    *
-   * @return {@code true} if the set of {@link Pattern}s already
-   * indexed under the supplied {@code key}&mdash;if any&mdash;was
-   * changed as a result of this call; {@code false} otherwise
+   * @return the full {@link Set} of {@link Pattern}s indexed under
+   * the supplied {@code key}; never {@code null}
    *
    * @exception IllegalArgumentException if either parameter is {@code
    * null}
@@ -136,8 +163,10 @@ public class MessageFactory<T> implements Serializable {
    * @see Pattern
    *
    * @see ResourceBundleKey
+   *
+   * @see #getPatterns(ResourceBundleKey)
    */
-  public boolean addPatterns(final ResourceBundleKey key, final Iterable<Pattern<T>> patterns) {
+  public Set<Pattern<T>> addPatterns(final ResourceBundleKey key, final Iterable<Pattern<T>> patterns) {
     if (key == null) {
       throw new IllegalArgumentException("key", new NullPointerException("key"));
     }
@@ -152,28 +181,30 @@ public class MessageFactory<T> implements Serializable {
       patternSet = new LinkedHashSet<Pattern<T>>();
       this.patterns.put(key, patternSet);
     }
-    boolean returnValue = false;
     for (final Pattern<T> pattern : patterns) {
       if (pattern != null) {
-        returnValue = patternSet.add(pattern) || returnValue;
+        patternSet.add(pattern);
       }
     }
-    return returnValue;
+    return patternSet;
   }
 
   /**
-   * Returns a non-{@code null}, {@linkplain
-   * Collections#unmodifiableSet(Set) unmodifiable <code>Set</code> view}
-   * of {@link Pattern}s indexed under the supplied {@code key}.
+   * Returns a {@link Set} of {@link Pattern}s indexed under the
+   * supplied {@code key}, or {@code null} if there is no such {@link
+   * Set}.
    *
-   * <p>This method never returns {@code null}.</p>
+   * <p>The {@link Set} that is returned is the actual {@link Set}
+   * used internally by this {@link MessageFactory} and is
+   * mutable.</p>
+   *
+   * <p>This method may return {@code null}.</p>
    *
    * @param key the {@link ResourceBundleKey} whose {@link Pattern}s
    * are to be retrieved; must not be {@code null}
    *
-   * @return a non-{@code null}, {@linkplain
-   * Collections#unmodifiableSet(Set) unmodifiable <code>Set</code> view}
-   * of {@link Pattern}s indexed under the supplied {@code key}
+   * @return a {@link Set} of {@link Pattern}s indexed under the
+   * supplied {@code key}, or {@code null}
    *
    * @exception IllegalArgumentException if {@code key} is {@code
    * null}
@@ -183,15 +214,38 @@ public class MessageFactory<T> implements Serializable {
       throw new IllegalArgumentException("key", new NullPointerException("key"));
     }
     final Set<Pattern<T>> returnValue;
-    if (this.patterns == null || this.patterns.isEmpty() || !this.patterns.containsKey(key)) {
-      returnValue = Collections.emptySet();
+    if (this.patterns != null && !this.patterns.isEmpty()) {
+      returnValue = this.patterns.get(key);
     } else {
-      final Set<Pattern<T>> set = this.patterns.get(key);
-      if (set == null || set.isEmpty()) {
-        returnValue = Collections.emptySet();
-      } else {
-        returnValue = Collections.unmodifiableSet(set);
-      }
+      returnValue = null;
+    }
+    return returnValue;
+  }
+
+  /**
+   * Removes the {@link Set} of {@link Pattern}s indexed under the
+   * supplied {@code key} and returns it.
+   *
+   * <p>This method may return {@code null}.</p>
+   *
+   * @param key a {@link ResourceBundleKey} whose associated {@link
+   * Pattern}s are to be removed; must not be {@code null}
+   *
+   * @return a {@link Set} of {@link Pattern}s that was removed, or
+   * {@code null}
+   *
+   * @exception IllegalArgumentException if {@code key} was {@code
+   * null}
+   */
+  public Set<Pattern<T>> removePatterns(final ResourceBundleKey key) {
+    if (key == null) {
+      throw new IllegalArgumentException("key", new NullPointerException("key"));
+    }
+    final Set<Pattern<T>> returnValue;
+    if (this.patterns == null || this.patterns.isEmpty()) {
+      returnValue = null;
+    } else {
+      returnValue = this.patterns.remove(key);
     }
     return returnValue;
   }

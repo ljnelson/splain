@@ -317,6 +317,9 @@
     <maven.compiler.target>1.6</maven.compiler.target>
     <maven.compiler.verbose>false</maven.compiler.verbose>
 
+    <!-- maven-project-info-reports-plugin Properties -->
+    <dependency.locations.enabled>false</dependency.locations.enabled>
+
     <!-- maven-resources-plugin Properties -->
     <maven.resources.escapeString>\</maven.resources.escapeString>
 

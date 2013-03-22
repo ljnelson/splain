@@ -161,8 +161,9 @@ public class MessageFactoryReader implements Closeable {
   /**
    * Creates a new {@link MessageFactoryReader}.
    *
-   * @param the name of a resource to be loaded via the {@link
-   * ClassLoader#getResource(String)} method; must not be {@code null}
+   * @param resourceName the name of a resource to be loaded via the
+   * {@link ClassLoader#getResource(String)} method; must not be
+   * {@code null}
    *
    * @param defaultResourceBundle a {@link ResourceBundle} to use to
    * resolve relative keys; may be {@code null}

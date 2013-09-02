@@ -338,7 +338,7 @@
 <FONT color="green">335</FONT>       *<a name="line.335"></a>
 <FONT color="green">336</FONT>       * @see #format(Object, Matcher)<a name="line.336"></a>
 <FONT color="green">337</FONT>       */<a name="line.337"></a>
-<FONT color="green">338</FONT>      public String getMessage(final List&lt;T&gt; input) {<a name="line.338"></a>
+<FONT color="green">338</FONT>      public String getMessage(final List&lt;? extends T&gt; input) {<a name="line.338"></a>
 <FONT color="green">339</FONT>        final String returnValue;<a name="line.339"></a>
 <FONT color="green">340</FONT>        final Selector&lt;T&gt; selector = this.getSelector(input);<a name="line.340"></a>
 <FONT color="green">341</FONT>        if (selector == null) {<a name="line.341"></a>
@@ -392,7 +392,7 @@
 <FONT color="green">389</FONT>       * parameter, or {@code null} if the {@code defaultValue} parameter<a name="line.389"></a>
 <FONT color="green">390</FONT>       * is {@code null} itself<a name="line.390"></a>
 <FONT color="green">391</FONT>       */<a name="line.391"></a>
-<FONT color="green">392</FONT>      public String getMessage(final List&lt;T&gt; input, final String defaultValue) {<a name="line.392"></a>
+<FONT color="green">392</FONT>      public String getMessage(final List&lt;? extends T&gt; input, final String defaultValue) {<a name="line.392"></a>
 <FONT color="green">393</FONT>        String returnValue = null;<a name="line.393"></a>
 <FONT color="green">394</FONT>        try {<a name="line.394"></a>
 <FONT color="green">395</FONT>          returnValue = this.getMessage(input);<a name="line.395"></a>
@@ -419,7 +419,7 @@
 <FONT color="green">416</FONT>       *<a name="line.416"></a>
 <FONT color="green">417</FONT>       * @return a {@link Selector}, or {@code null}<a name="line.417"></a>
 <FONT color="green">418</FONT>       */<a name="line.418"></a>
-<FONT color="green">419</FONT>      final Selector&lt;T&gt; getSelector(final List&lt;T&gt; input) {<a name="line.419"></a>
+<FONT color="green">419</FONT>      final Selector&lt;T&gt; getSelector(final List&lt;? extends T&gt; input) {<a name="line.419"></a>
 <FONT color="green">420</FONT>        Selector&lt;T&gt; returnValue = null;<a name="line.420"></a>
 <FONT color="green">421</FONT>        if (this.patterns != null &amp;&amp; !this.patterns.isEmpty()) {<a name="line.421"></a>
 <FONT color="green">422</FONT>          final Set&lt;Entry&lt;ResourceBundleKey, Set&lt;Pattern&lt;T&gt;&gt;&gt;&gt; entrySet = this.patterns.entrySet();<a name="line.422"></a>

@@ -287,11 +287,11 @@
     <mavenCompilerPluginVersion>3.1</mavenCompilerPluginVersion>
     <mavenDependencyPluginVersion>2.8</mavenDependencyPluginVersion>
     <mavenDeployPluginVersion>2.7</mavenDeployPluginVersion>
-    <mavenEnforcerPluginVersion>1.2</mavenEnforcerPluginVersion>
+    <mavenEnforcerPluginVersion>1.3.1</mavenEnforcerPluginVersion>
     <mavenGpgPluginVersion>1.4</mavenGpgPluginVersion>
     <mavenInstallPluginVersion>2.4</mavenInstallPluginVersion>
     <mavenJarPluginVersion>2.4</mavenJarPluginVersion>
-    <mavenJavadocPluginVersion>2.9</mavenJavadocPluginVersion>
+    <mavenJavadocPluginVersion>2.9.1</mavenJavadocPluginVersion>
     <mavenPluginPluginVersion>3.2</mavenPluginPluginVersion>
     <mavenProjectInfoReportsPlugin>2.7</mavenProjectInfoReportsPlugin>
     <mavenReleasePluginVersion>2.4.1</mavenReleasePluginVersion>
@@ -300,10 +300,10 @@
     <mavenScmPluginVersion>1.8.1</mavenScmPluginVersion>
     <mavenSitePluginVersion>3.3</mavenSitePluginVersion>
     <mavenSourcePluginVersion>2.2.1</mavenSourcePluginVersion>
-    <mavenSurefirePluginVersion>2.14.1</mavenSurefirePluginVersion>
+    <mavenSurefirePluginVersion>2.16</mavenSurefirePluginVersion>
     <objexjVersion>1.2.0</objexjVersion>
     <siteMavenPluginVersion>0.8</siteMavenPluginVersion>
-    <versionsMavenPluginVersion>2.0</versionsMavenPluginVersion>
+    <versionsMavenPluginVersion>2.1</versionsMavenPluginVersion>
 
     <!-- Other Properties -->
     <loggingConfigFile>${basedir}/logging.properties</loggingConfigFile>
@@ -319,6 +319,9 @@
 
     <!-- maven-project-info-reports-plugin Properties -->
     <dependency.locations.enabled>false</dependency.locations.enabled>
+
+    <!-- maven-release-plugin Properties -->
+    <goals>deploy,site-deploy</goals>
 
     <!-- maven-resources-plugin Properties -->
     <maven.resources.escapeString>\</maven.resources.escapeString>

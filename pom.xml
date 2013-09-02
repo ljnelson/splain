@@ -284,8 +284,8 @@
     <junitVersion>4.11</junitVersion>
     <mavenAssemblyPluginVersion>2.4</mavenAssemblyPluginVersion>
     <mavenCleanPluginVersion>2.5</mavenCleanPluginVersion>
-    <mavenCompilerPluginVersion>3.0</mavenCompilerPluginVersion>
-    <mavenDependencyPluginVersion>2.7</mavenDependencyPluginVersion>
+    <mavenCompilerPluginVersion>3.1</mavenCompilerPluginVersion>
+    <mavenDependencyPluginVersion>2.8</mavenDependencyPluginVersion>
     <mavenDeployPluginVersion>2.7</mavenDeployPluginVersion>
     <mavenEnforcerPluginVersion>1.2</mavenEnforcerPluginVersion>
     <mavenGpgPluginVersion>1.4</mavenGpgPluginVersion>
@@ -293,17 +293,16 @@
     <mavenJarPluginVersion>2.4</mavenJarPluginVersion>
     <mavenJavadocPluginVersion>2.9</mavenJavadocPluginVersion>
     <mavenPluginPluginVersion>3.2</mavenPluginPluginVersion>
-    <mavenProjectInfoReportsPlugin>2.6</mavenProjectInfoReportsPlugin>
-    <mavenReleasePluginVersion>2.4</mavenReleasePluginVersion>
+    <mavenProjectInfoReportsPlugin>2.7</mavenProjectInfoReportsPlugin>
+    <mavenReleasePluginVersion>2.4.1</mavenReleasePluginVersion>
     <mavenResourcesPluginVersion>2.6</mavenResourcesPluginVersion>
     <mavenScmManagerPlexusVersion>${mavenScmPluginVersion}</mavenScmManagerPlexusVersion>
     <mavenScmPluginVersion>1.8.1</mavenScmPluginVersion>
-    <mavenScmProviderGitexeVersion>${mavenScmPluginVersion}</mavenScmProviderGitexeVersion>
-    <mavenSitePluginVersion>3.2</mavenSitePluginVersion>
+    <mavenSitePluginVersion>3.3</mavenSitePluginVersion>
     <mavenSourcePluginVersion>2.2.1</mavenSourcePluginVersion>
-    <mavenSurefirePluginVersion>2.14</mavenSurefirePluginVersion>
-    <objexjVersion>1.0.0</objexjVersion>
-    <siteMavenPluginVersion>0.7</siteMavenPluginVersion>
+    <mavenSurefirePluginVersion>2.14.1</mavenSurefirePluginVersion>
+    <objexjVersion>1.2.0</objexjVersion>
+    <siteMavenPluginVersion>0.8</siteMavenPluginVersion>
     <versionsMavenPluginVersion>2.0</versionsMavenPluginVersion>
 
     <!-- Other Properties -->

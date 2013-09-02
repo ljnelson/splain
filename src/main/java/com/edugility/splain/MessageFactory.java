@@ -335,7 +335,7 @@ public class MessageFactory<T> implements Serializable {
    *
    * @see #format(Object, Matcher)
    */
-  public String getMessage(final List<T> input) {
+  public String getMessage(final List<? extends T> input) {
     final String returnValue;
     final Selector<T> selector = this.getSelector(input);
     if (selector == null) {
@@ -389,7 +389,7 @@ public class MessageFactory<T> implements Serializable {
    * parameter, or {@code null} if the {@code defaultValue} parameter
    * is {@code null} itself
    */
-  public String getMessage(final List<T> input, final String defaultValue) {
+  public String getMessage(final List<? extends T> input, final String defaultValue) {
     String returnValue = null;
     try {
       returnValue = this.getMessage(input);
@@ -416,7 +416,7 @@ public class MessageFactory<T> implements Serializable {
    *
    * @return a {@link Selector}, or {@code null}
    */
-  final Selector<T> getSelector(final List<T> input) {
+  final Selector<T> getSelector(final List<? extends T> input) {
     Selector<T> returnValue = null;
     if (this.patterns != null && !this.patterns.isEmpty()) {
       final Set<Entry<ResourceBundleKey, Set<Pattern<T>>>> entrySet = this.patterns.entrySet();

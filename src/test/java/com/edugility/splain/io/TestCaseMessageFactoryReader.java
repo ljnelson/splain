@@ -57,8 +57,9 @@ public class TestCaseMessageFactoryReader {
     super();
   }
 
+  @Test
   public void testPrecedence() throws IOException, ParseException {
-    final InputStreamReader isr = new InputStreamReader(this.getClass().getResource("/MessageCatalog.mc").openStream());
+    final InputStreamReader isr = new InputStreamReader(this.getClass().getResource("/Messages.mc").openStream());
     final MessageFactoryReader r = new MessageFactoryReader(isr);
     final MessageFactory<Object> mf = r.read();
     assertNotNull(mf);

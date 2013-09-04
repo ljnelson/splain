@@ -32,13 +32,11 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.ResourceBundle.Control;
 import java.util.Set;
 import java.util.LinkedHashSet;
 
@@ -58,7 +56,7 @@ import org.mvel2.templates.TemplateRuntime;
  *
  * <p>This class is not safe for concurrent use by multiple {@link
  * Thread}s.</p>
- * 
+ *
  * @param <T> the type of {@link Object} used by the {@link
  * #getMessage(List)} method; the type of {@link Object} used by the
  * {@link Pattern}s that help select messages
@@ -69,13 +67,13 @@ import org.mvel2.templates.TemplateRuntime;
  * @see #getMessage(List)
  */
 public class MessageFactory<T> implements Serializable {
-  
+
   /**
    * The version of this class for {@linkplain Serializable
    * serialization purposes}.
    */
   private static final long serialVersionUID = 1L;
-  
+
   /**
    * A {@link Map} of {@link Set}s of {@link Pattern}s, indexed by
    * {@link ResourceBundleKey}s.
@@ -90,7 +88,7 @@ public class MessageFactory<T> implements Serializable {
   public MessageFactory() {
     super();
   }
-  
+
   /**
    * Adds a {@link Pattern} to the {@link Set} of {@link Pattern}s
    * indexed under the supplied {@link ResourceBundleKey} and returns
@@ -166,7 +164,7 @@ public class MessageFactory<T> implements Serializable {
    *
    * @see #getPatterns(ResourceBundleKey)
    */
-  public Set<Pattern<T>> addPatterns(final ResourceBundleKey key, final Iterable<Pattern<T>> patterns) {
+  public Set<Pattern<T>> addPatterns(final ResourceBundleKey key, final Iterable<? extends Pattern<T>> patterns) {
     if (key == null) {
       throw new IllegalArgumentException("key", new NullPointerException("key"));
     }
@@ -347,7 +345,7 @@ public class MessageFactory<T> implements Serializable {
       } else {
         returnValue = this.convert(this.format(key.getObject(), selector.getMatcher()));
       }
-    }    
+    }
     return returnValue;
   }
 
@@ -511,7 +509,7 @@ public class MessageFactory<T> implements Serializable {
      *
      * @return the non-{@code null} {@link Matcher} portion of this
      * {@link Selector}
-     */ 
+     */
     public final Matcher<T> getMatcher() {
       return this.matcher;
     }
@@ -524,7 +522,7 @@ public class MessageFactory<T> implements Serializable {
     @Override
     public int hashCode() {
       int result = 17;
-      
+
       final Object key = this.getKey();
       int c;
       if (key == null) {

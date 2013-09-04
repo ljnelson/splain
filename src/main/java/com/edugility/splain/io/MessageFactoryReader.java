@@ -36,9 +36,11 @@ import java.io.LineNumberReader;
 import java.io.Reader;
 import java.io.Serializable; // for javadoc only
 
+import java.sql.SQLException; // for javadoc only
+
 import java.text.ParseException;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -55,6 +57,10 @@ import com.edugility.splain.ResourceBundleKey;
 /**
  * Creates {@link MessageFactory} instances from an underlying {@link
  * Reader}.
+ *
+ * <p>{@link MessageFactoryReader} instances must be {@linkplain
+ * #close() closed} after they have been used to {@linkplain #read()
+ * produce <code>MessageFactory</code> instances}.</p>
  *
  * @author <a href="http://about.me/lairdnelson"
  * target="_parent">Laird Nelson</a>
@@ -367,17 +373,7 @@ public class MessageFactoryReader implements Closeable {
     if (resourceName == null) {
       throw new IllegalArgumentException("resourceName", new NullPointerException("resourceName"));
     }
-    final InputStream resource;
-    ClassLoader cl = Thread.currentThread().getContextClassLoader();
-    if (cl == null) {
-      if (resourceName.startsWith("/")) {
-        resource = this.getClass().getResourceAsStream(resourceName);
-      } else {
-        resource = this.getClass().getResourceAsStream(String.format("/%s", resourceName));
-      }
-    } else {
-      resource = cl.getResourceAsStream(resourceName);
-    }
+    final InputStream resource = this.getResourceAsStream(resourceName);
     if (resource == null) {
       throw new IllegalArgumentException("resourceName", new IllegalStateException("resource not found"));
     }
@@ -511,9 +507,72 @@ public class MessageFactoryReader implements Closeable {
    * builds a {@link MessageFactoryReader} from the results.
    *
    * <p>To avoid resource leaks, this {@link MessageFactoryReader}
-   * should be {@linkplain #close() closed} after this method
-   * completes normally.  This method does not call the {@link
-   * #close()} method itself.</p>
+   * <strong>must</strong> be {@linkplain #close() closed} at some
+   * point after this method completes normally.  This method does not
+   * call the {@link #close()} method itself.</p>
+   *
+   * <p>This method consumes a text stream whose contents are a
+   * specially formatted message catalog and loads it entirely into
+   * memory as a {@link MessageFactory} instance.  The format of such
+   * a catalog is detailed below.</p>
+   *
+   * <p>A message catalog consists of a list of <em>message catalog
+   * entries</em> separated by one or more blank lines.</p>
+   *
+   * <p>A message catalog entry consists of a list of
+   * <em>patterns</em>, one per line, followed by a line consisting of
+   * two dashes ("{@code --}"), followed by a <em>resource bundle
+   * key</em> or unqualified message that those patterns notionally
+   * <em>select</em>.</p>
+   *
+   * <p>A pattern is a textual representation of an {@linkplain
+   * Pattern objexj <code>Pattern</code>}.  It resembles a regular
+   * expression.  Please see the <a
+   * href="http://ljnelson.github.io/objexj/syntax.html">objexj Syntax
+   * Guide</a> for more information.</p>
+   *
+   * <p>A resource bundle key is the name of a classpath resource
+   * identifying a {@link ResourceBundle}, followed by a solidus
+   * ("{@code /}"), followed by the name of a key within that {@link
+   * ResourceBundle}.  Please see the {@linkplain ResourceBundleKey
+   * documentation for <code>ResourceBundleKey</code>} for more
+   * information.</p>
+   *
+   * <p>An unqualified message is a simple text string that is not
+   * further processed in any way.</p>
+   *
+   * <p>Line comments may be embedded in the message catalog starting
+   * with the hash sign ("{@code #}").</p>
+   *
+   * <p>Because message catalog entries are processed in order, the
+   * most generic message catalog entry should be the last entry in
+   * the list.  Typically it will consist of a pattern that matches
+   * {@link Throwable} and selects a generic message.</p>
+   *
+   * <p>Here are some examples of message catalog entries:</p>
+   *
+   * <blockquote>
+   *
+   * <pre># Comments like this begin with a hash sign.
+   *# Match any {@linkplain Throwable Throwable} chain whose root
+   *# cause is a {@linkplain SQLException SQLException}.  If this
+   *# {@linkplain Pattern pattern} matches, the corresponding message
+   *# can be found in a {@linkplain ResourceBundle} named "com.foo.Messages"
+   *# under a {@linkplain ResourceBundle#getObject(String) key} named
+   *# databaseError.
+   *java.sql.SQLException$
+   *--
+   *com.foo.Messages/databaseError</pre>
+   *
+   * <pre># Matches an {@linkplain IllegalArgumentException
+   *IllegalArgumentException}
+   *# caused by a {@linkplain NullPointerException NullPointerException}
+   *# and selects a message named nullArgument in the
+   *# com.foo.Messages {@linkplain ResourceBundle ResourceBundle}
+   *java.lang.IllegalArgumentException/java.lang.NullPointerException
+   *--
+   *com.foo.Messages/nullArgument</pre>
+   * </blockquote>
    *
    * @param <T> the type of objects new {@link MessageFactory}
    * instances produced from this method will work with
@@ -541,6 +600,9 @@ public class MessageFactoryReader implements Closeable {
       switch (state) {
 
         // NORMAL
+        //
+        // State before processing patterns/matchers.
+        // Whitespace legal.
       case NORMAL:
         if (line.isEmpty() || line.startsWith("#")) {
           break;
@@ -548,6 +610,8 @@ public class MessageFactoryReader implements Closeable {
           throw new IllegalStateException("\"--\" is not permitted here at line " + reader.getLineNumber());
         } else {
           state = State.MATCHERS;
+          assert patterns.isEmpty();
+          assert message == null;
           patterns.add(Pattern.<T>compile(line));
           break;
         }
@@ -555,6 +619,9 @@ public class MessageFactoryReader implements Closeable {
 
 
         // MATCHERS
+        //
+        // State where we're processing patterns and matchers.
+        // Blank lines are illegal.
       case MATCHERS:
         if (line.isEmpty()) {
           throw new IllegalStateException("An empty line is not permitted here at line " + reader.getLineNumber());
@@ -568,16 +635,19 @@ public class MessageFactoryReader implements Closeable {
 
 
         // MESSAGE
+        //
+        // The resource bundle key to associate with the patterns just
+        // encountered.
       case MESSAGE:
         if (line.isEmpty()) {
           if (message != null) {
-            assert patterns != null;
+            assert message.length() > 0;
             assert !patterns.isEmpty();
             addPatterns(mf, defaultResourceBundle, message.toString(), patterns);
             patterns.clear();
             message = null;
-            state = State.NORMAL;
           }
+          state = State.NORMAL;
         } else {
           if (message == null) {
             message = new StringBuilder();
@@ -589,24 +659,25 @@ public class MessageFactoryReader implements Closeable {
         break;
         // end MESSAGE
 
-
       default:
         throw new IllegalStateException("Unexpected state: " + state);
       }
 
-      if (message != null && !patterns.isEmpty()) {
-        addPatterns(mf, defaultResourceBundle, message.toString(), patterns);
-        patterns.clear();
-        message = null;
-      }
-
     }
+
+    if (message != null && !patterns.isEmpty()) {
+      addPatterns(mf, defaultResourceBundle, message.toString(), patterns);
+      patterns.clear();
+      message = null;
+    }
+
+
     return mf;
   }
 
   /**
    * {@linkplain MessageFactory#addPatterns(ResourceBundleKey, Set)
-   * Adds} the supplied {@link Set} of {@link Pattern}s to the
+   * Adds} the supplied {@link Collection} of {@link Pattern}s to the
    * supplied {@link MessageFactory} under a new {@link
    * ResourceBundleKey} {@linkplain
    * ResourceBundleKey#valueOf(ResourceBundle, Locale,
@@ -623,7 +694,7 @@ public class MessageFactoryReader implements Closeable {
    * @param message the "key" component of a {@link
    * ResourceBundleKey}; must not be {@code null}
    *
-   * @param patterns a non-{@code null} {@link Set} of {@link
+   * @param patterns a non-{@code null} {@link Collection} of {@link
    * Pattern}s to add; must not be {@linkplain Collection#isEmpty()
    * empty}
    *
@@ -639,9 +710,9 @@ public class MessageFactoryReader implements Closeable {
    * @see ResourceBundleKey#valueOf(ResourceBundle, Locale,
    * ResourceBundle.Control, String)
    *
-   * @see MessageFactory#addPatterns(ResourceBundleKey, Set)
+   * @see MessageFactory#addPatterns(ResourceBundleKey, Collection)
    */
-  private final <T> void addPatterns(final MessageFactory<T> mf, final ResourceBundle defaultResourceBundle, final String message, final Set<Pattern<T>> patterns) {
+  private final <T> void addPatterns(final MessageFactory<T> mf, final ResourceBundle defaultResourceBundle, final String message, final Collection<? extends Pattern<T>> patterns) {
     if (mf == null) {
       throw new IllegalArgumentException("mf", new NullPointerException("mf"));
     }
@@ -672,6 +743,55 @@ public class MessageFactoryReader implements Closeable {
     if (this.reader != null) {
       this.reader.close();
     }
+  }
+
+  /**
+   * Returns a non-{@code null} {@link InputStream} that can read from
+   * a classpath resource identified by the supplied {@code
+   * resourceName}.
+   *
+   * <p>This implementation calls the {@link
+   * ClassLoader#getResourceAsStream(String)} method on the
+   * {@linkplain Thread#getContextClassLoader() context
+   * <code>ClassLoader</code>}, if that {@link ClassLoader} is
+   * non-{@code null}.  Otherwise, this implementation invokes the
+   * {@link Class#getResourceAsStream(String)} method on its own
+   * {@link Class}, first ensuring that the supplied {@code resourceName}
+   * begins with a {@code /} character.</p>
+   *
+   * @param resourceName the name of a classpath resource to be
+   * opened; must not be {@code null}
+   *
+   * @return a non-{@code null}, open {@link InputStream}
+   *
+   * @exception IllegalArgumentException if {@code resourceName} is
+   * {@code null} or identifies a resource that could not be opened
+   *
+   * @see Thread#getContextClassLoader()
+   *
+   * @see ClassLoader#getResourceAsStream(String)
+   *
+   * @see Class#getResourceAsStream(String)
+   */
+  protected InputStream getResourceAsStream(final String resourceName) {
+    if (resourceName == null) {
+      throw new IllegalArgumentException("resourceName", new NullPointerException("resourceName"));
+    }
+    final InputStream resource;
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    if (cl == null) {
+      if (resourceName.startsWith("/")) {
+        resource = this.getClass().getResourceAsStream(resourceName);
+      } else {
+        resource = this.getClass().getResourceAsStream(new StringBuilder("/").append(resourceName).toString());
+      }
+    } else {
+      resource = cl.getResourceAsStream(resourceName);
+    }
+    if (resource == null) {
+      throw new IllegalArgumentException("resourceName", new IllegalStateException("resource not found"));
+    }
+    return resource;
   }
 
 }

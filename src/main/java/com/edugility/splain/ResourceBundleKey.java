@@ -58,6 +58,8 @@ public final class ResourceBundleKey implements Serializable {
    * <p>This field may be {@code null}.</p>
    */
   private final ResourceBundle resourceBundle;
+
+  private final String resourceBundleName;
     
   /**
    * The key component of this {@link ResourceBundleKey}.
@@ -82,7 +84,7 @@ public final class ResourceBundleKey implements Serializable {
    * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
    */
   public ResourceBundleKey(final String key) {
-    this(null, key);
+    this(null, null, key);
   }
 
   /**
@@ -108,6 +110,35 @@ public final class ResourceBundleKey implements Serializable {
    * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
    */
   public ResourceBundleKey(final ResourceBundle resourceBundle, final String key) {
+    this(resourceBundle, null, key);
+  }
+
+  /**
+   * Creates a new {@link ResourceBundleKey}.
+   *
+   * @param resourceBundle the {@link ResourceBundle} that will be
+   * returned by the {@link #getResourceBundle()} method; may be
+   * {@code null}
+   *
+   * @param resourceBundleName the name of the supplied {@code
+   * resourceBundle}; may be {@code null}
+   *
+   * @param key the key identifying an {@linkplain
+   * ResourceBundle#getObject(String) value} within the supplied
+   * {@link ResourceBundle} (if the supplied {@link ResourceBundle} is
+   * non-{@code null}; must not be {@code null}
+   *
+   * @exception IllegalArgumentException if {@code key} is {@code
+   * null}
+   *
+   * @exception MissingResourceException if {@code resourceBundle} is
+   * non-{@code null} and does not {@linkplain
+   * ResourceBundle#containsKey(String) contain} the supplied {@code
+   * key}
+   *
+   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
+   */
+  public ResourceBundleKey(final ResourceBundle resourceBundle, final String resourceBundleName, final String key) {
     super();
     if (key == null) {
       throw new IllegalArgumentException("key", new NullPointerException("key"));
@@ -117,6 +148,7 @@ public final class ResourceBundleKey implements Serializable {
       resourceBundle.getObject(key);
       assert resourceBundle.containsKey(key);
     }
+    this.resourceBundleName = resourceBundleName;
     this.resourceBundle = resourceBundle;
     this.key = key;
   }
@@ -134,6 +166,23 @@ public final class ResourceBundleKey implements Serializable {
    */
   public final ResourceBundle getResourceBundle() {
     return this.resourceBundle;
+  }
+
+  /**
+   * Returns the name of the {@linkplain #getResourceBundle()
+   * affiliated <code>ResourceBundle</code>}, or {@code null} if no
+   * name was supplied at {@linkplain
+   * #ResourceBundleKey(ResourceBundle, String, string) construction
+   * time}.
+   *
+   * <p>This method may return {@code null}.</p>
+   *
+   * @return the name of this {@link ResourceBundleKey}'s {@linkplain
+   * #getResourceBundle() affiliated <code>ResourceBundle</code>}, or
+   * {@code null}
+   */
+  public final String getResourceBundleName() {
+    return this.resourceBundleName;
   }
 
   /**
@@ -250,6 +299,25 @@ public final class ResourceBundleKey implements Serializable {
     }
   }
 
+  @Override
+  public final String toString() {
+    final StringBuilder sb = new StringBuilder();
+    final Object resourceBundleName = this.getResourceBundleName();
+    if (resourceBundleName == null) {
+      final Object resourceBundle = this.getResourceBundle();
+      if (resourceBundle != null) {
+        sb.append(resourceBundle).append("/");
+      }
+    } else {
+      sb.append(resourceBundleName).append("/");
+    }
+    final Object key = this.getKey();
+    if (key != null) {
+      sb.append(key);
+    }
+    return sb.toString();
+  }
+  
 
   /*
    * Static methods.
@@ -693,7 +761,6 @@ public final class ResourceBundleKey implements Serializable {
 
     switch (state) {
     case BUNDLE_KEY:
-      assert bundleName != null;
       bundleKey = sb.toString();
       sb.setLength(0);
       break;
@@ -719,7 +786,7 @@ public final class ResourceBundleKey implements Serializable {
     } else {
       final ResourceBundle rb = ResourceBundle.getBundle(bundleName, locale, control);
       assert rb != null;
-      returnValue = new ResourceBundleKey(rb, bundleKey);
+      returnValue = new ResourceBundleKey(rb, bundleName, bundleKey);
     }
     return returnValue;
   }

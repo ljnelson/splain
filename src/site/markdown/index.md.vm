@@ -1,0 +1,19 @@
+<!-- -*- markdown -*- -->
+# Introduction
+
+Welcome to the `${project.artifactId}` project.
+`${project.artifactId}` explains Java `Exception` chains, using
+pattern-matching provided by [`objexj`][3].
+
+# Version
+
+The current version is ${project.version}.
+
+# API Documentation
+
+The API is fully documented.  Please see the [API documentation][2] to
+get started.
+
+[1]: http://about.me/lairdnelson
+[2]: apidocs/index.html
+[3]: http://ljnelson.github.io/objexj

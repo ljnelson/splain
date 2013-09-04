@@ -625,9 +625,11 @@ public class MessageFactoryReader implements Closeable {
       case MATCHERS:
         if (line.isEmpty()) {
           throw new IllegalStateException("An empty line is not permitted here at line " + reader.getLineNumber());
+        } else if (line.startsWith("#")) {
+          break;
         } else if (line.startsWith("--")) {
           state = State.MESSAGE;
-        } else if (!line.startsWith("#")) {
+        } else {
           patterns.add(Pattern.<T>compile(line));
         }
         break;

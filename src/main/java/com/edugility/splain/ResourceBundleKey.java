@@ -44,6 +44,12 @@ import java.util.ResourceBundle.Control;
  * @see ResourceBundle
  */
 public final class ResourceBundleKey implements Serializable {
+
+
+  /*
+   * Static fields.
+   */
+
     
   /**
    * The version of this class for {@linkplain Serializable
@@ -51,6 +57,12 @@ public final class ResourceBundleKey implements Serializable {
    */
   private static final long serialVersionUID = 1L;
     
+  
+  /*
+   * Instance fields.
+   */
+
+
   /**
    * The {@link ResourceBundle} component of this {@link
    * ResourceBundleKey}.
@@ -59,6 +71,12 @@ public final class ResourceBundleKey implements Serializable {
    */
   private final ResourceBundle resourceBundle;
 
+  /**
+   * The name used by calling code to retrieve the {@link
+   * ResourceBundle} {@linkplain #resourceBundle used} by this class.
+   * 
+   * <p>This field may be {@code null}.</p>
+   */
   private final String resourceBundleName;
     
   /**
@@ -68,27 +86,43 @@ public final class ResourceBundleKey implements Serializable {
    */
   private final String key;
     
+
+  /*
+   * Constructors
+   */
+
+
   /**
    * Creates a new {@link ResourceBundleKey}.
    *
-   * @param key the key that will be returned by {@link #getKey()} as
-   * well as {@link #getObject()} (since this contructor does not have
-   * a {@link ResourceBundle} parameter)
+   * <p>This constructor calls the {@link
+   * #ResourceBundleKey(ResourceBundle, String, String)}
+   * constructor.</p>
    *
-   * @see #getKey()
+   * @param value what would normally be a {@linkplain
+   * ResourceBundle#getObject(String) key into} a {@link
+   * ResourceBundle}, but since no {@link ResourceBundle} can be
+   * supplied to this constructor, the actual value that will be
+   * returned by the {@link #getObject()} method; must not be {@code
+   * null}
    *
-   * @see #getResourceBundle()
+   * @exception IllegalArgumentException if {@code value} is {@code
+   * null}
    *
-   * @see #ResourceBundleKey(ResourceBundle, String)
+   * @see #ResourceBundleKey(ResourceBundle, String, String)
    *
    * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
    */
-  public ResourceBundleKey(final String key) {
-    this(null, null, key);
+  public ResourceBundleKey(final String value) {
+    this(null, null, value);
   }
 
   /**
    * Creates a new {@link ResourceBundleKey}.
+   *
+   * <p>This constructor calls the {@link
+   * #ResourceBundleKey(ResourceBundle, String, String)}
+   * constructor.</p>
    *
    * @param resourceBundle the {@link ResourceBundle} that will be
    * returned by the {@link #getResourceBundle()} method; may be
@@ -106,6 +140,8 @@ public final class ResourceBundleKey implements Serializable {
    * non-{@code null} and does not {@linkplain
    * ResourceBundle#containsKey(String) contain} the supplied {@code
    * key}
+   *
+   * @see #ResourceBundleKey(ResourceBundle, String, String)
    *
    * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
    */
@@ -162,9 +198,9 @@ public final class ResourceBundleKey implements Serializable {
    * @return the {@link ResourceBundle} component of this {@link
    * ResourceBundleKey}, or {@code null}
    *
-   * @see #ResourceBundleKey(ResourceBundle, String)
+   * @see #ResourceBundleKey(ResourceBundle, String, String)
    */
-  public final ResourceBundle getResourceBundle() {
+  private final ResourceBundle getResourceBundle() {
     return this.resourceBundle;
   }
 
@@ -180,8 +216,10 @@ public final class ResourceBundleKey implements Serializable {
    * @return the name of this {@link ResourceBundleKey}'s {@linkplain
    * #getResourceBundle() affiliated <code>ResourceBundle</code>}, or
    * {@code null}
+   *
+   * @see #ResourceBundleKey(ResourceBundle, String, String)
    */
-  public final String getResourceBundleName() {
+  private final String getResourceBundleName() {
     return this.resourceBundleName;
   }
 
@@ -193,27 +231,22 @@ public final class ResourceBundleKey implements Serializable {
    * @return the key component of this {@link ResourceBundleKey};
    * never {@code null}
    *
-   * @see #ResourceBundleKey(ResourceBundle, String)
+   * @see #ResourceBundleKey(ResourceBundle, String, String)
    */
-  public final String getKey() {
+  private final String getKey() {
     return this.key;
   }
 
   /**
-   * Returns the value corresponding to this {@link
-   * ResourceBundleKey}.
+   * Returns the {@linkplain ResourceBundle#getObject(String) value}
+   * corresponding to this {@link ResourceBundleKey}.
    *
    * <p>This method never returns {@code null}.</p>
    *
-   * <p>This method calls {@link #getResourceBundle()}.  If the return
-   * value is {@code null}, then the return value of {@link #getKey()}
-   * is returned.  Otherwise, the result of calling {@link
-   * ResourceBundle#getObject(String)} on the returned {@link
-   * ResourceBundle} supplying it with {@linkplain #getKey() the key}
-   * is returned.</p>
-   *
    * @return a non-{@code null} {@link Object} representing the value
    * corresponding to this {@link ResourceBundleKey}
+   *
+   * @see ResourceBundle#getObject(String)
    */
   public final Object getObject() {
     final Object returnValue;
@@ -299,6 +332,21 @@ public final class ResourceBundleKey implements Serializable {
     }
   }
 
+  /**
+   * Returns a non-{@code null} {@link String} representation of this
+   * {@link ResourceBundleKey}.  The representation is of the key
+   * itself, <em>not</em> of the return value of the {@link
+   * #getObject()} method.
+   * 
+   * <p>This method never returns {@code null}.</p>
+   *
+   * <p>The format of the {@link String} representation returned by
+   * this method may change at any time.</p>
+   *
+   * @return a non-{@code null} {@link String}
+   *
+   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
+   */
   @Override
   public final String toString() {
     final StringBuilder sb = new StringBuilder();
@@ -583,30 +631,45 @@ public final class ResourceBundleKey implements Serializable {
    * <p>The supplied {@code key} is checked to see if it is {@code
    * null}.  If so, an {@link IllegalArgumentException} is thrown.</p>
    *
-   * <p>Next, the key is {@linkplain String#trim() trimmed} and then
-   * parsed into a maximum of two components:</p>
+   * <p>Next, the key is {@linkplain String#trim() trimmed}.  If this
+   * results in an {@linkplain String#isEmpty() empty key}, an {@link
+   * IllegalArgumentException} is thrown.</p>
+   *
+   * <p>The non-{@linkplain String#isEmpty() empty} key is then parsed
+   * into a maximum of two components:</p>
    *
    * <ol>
    *
-   * <li>A <em>bundle name</em> component.  A bundle name is a {@link
-   * String} of the form normally supplied to {@link
+   * <li>A <em>bundle name</em>.  A bundle name is a {@link String} of
+   * the form normally supplied to {@link
    * ResourceBundle#getBundle(String, Locale, ClassLoader,
    * Control)}&mdash;that is, a fully-qualified class name whose
    * segments are separated with periods ("{@code .}").</li>
    *
-   * <li>A <em>key</em> component, separated from the bundle name with
-   * a solidus ("{@code /}").  A key is an arbitrary {@link String}
-   * that is legal for supplying to the {@link
-   * ResourceBundle#getObject(String)} method.</li>
+   * <li>A <em>bundle key</em> component, separated from the bundle
+   * name with a solidus ("{@code /}"; the solidus is part of neither
+   * the bundle name nor the bundle key).  A bundle key is an
+   * arbitrary {@link String} that is legal for supplying to the
+   * {@link ResourceBundle#getObject(String)} method.</li>
    *
    * </ol>
    *
    * <p>The bundle name component of the supplied {@code key} is
    * optional.  In this case, if the supplied and {@linkplain
    * String#trim() trimmed} {@code key} begins with a solidus ("{@code
-   * /}"), then the remainder of the key is taken to be a key that is
-   * {@linkplain ResourceBundle#containsKey(String) contained} by the
-   * supplied {@code defaultResourceBundle} parameter.</p>
+   * /}"), then the remainder of the key&mdash;the bundle key&mdash;is
+   * taken to be a key that {@linkplain
+   * ResourceBundle#containsKey(String) is contained} by the supplied
+   * {@code defaultResourceBundle} parameter.</p>
+   *
+   * <p>If the bundle key after this parsing and normalization is
+   * {@linkplain String#isEmpty() empty}, then an {@code
+   * IllegalArgumentException} is thrown.</p>
+   *
+   * <p>If the bundle name after this parsing and normalization is
+   * {@linkplain String#isEmpty() empty}, then the {@link
+   * ResourceBundle} that will be used to resolve bundle keys will be
+   * the supplied {@code defaultResourceBundle} parameter.</p>
    *
    * <p>If for any reason the supplied {@code key} cannot be parsed
    * into a (possibly empty) bundle name and key component divided by
@@ -614,9 +677,10 @@ public final class ResourceBundleKey implements Serializable {
    *
    * <ul>
    *
-   * <li>The code checks to see if the supplied {@link ResourceBundle}
-   * {@linkplain ResourceBundle#containsKey(String) contains} the
-   * {@linkplain String#trim() trimmed} {@code key}.</li>
+   * <li>The code checks to see if the supplied {@code
+   * defaultResourceBundle} parameter {@linkplain
+   * ResourceBundle#containsKey(String) contains} the {@linkplain
+   * String#trim() trimmed} {@code key} parameter.</li>
    *
    * <li>If it does, then the equivalent of {@link
    * #ResourceBundleKey(ResourceBundle, String) new

@@ -75,12 +75,6 @@ public class TestCaseResourceBundleKey {
   public void testCompositeBundleKey() {
     final ResourceBundleKey rbk = ResourceBundleKey.valueOf("a.b.c.d/key");
     assertNotNull(rbk);
-    final ResourceBundle rb = rbk.getResourceBundle();
-    assertNotNull(rb);
-    final String key = rbk.getKey();
-    assertEquals("key", key);
-    assertTrue(rb.containsKey("key"));
-    assertEquals("value", rb.getString("key"));
     assertEquals("value", rbk.getObject());
   }
 
@@ -98,13 +92,26 @@ public class TestCaseResourceBundleKey {
   public void testNoBundleBadKey() {
     final ResourceBundleKey rbk = ResourceBundleKey.valueOf("xyz");
     assertNotNull(rbk);
-    assertEquals("xyz", rbk.getKey());
     assertEquals("xyz", rbk.getObject());
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testSlashOnly() {
     ResourceBundleKey.valueOf("/");
+  }
+
+  @Test
+  public void testSlashWithKey() {
+    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("/key");
+    assertNotNull(rbk);
+    assertEquals("key", rbk.getObject());
+  }
+
+  @Test
+  public void testKeyOnly() {
+    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("key");
+    assertNotNull(rbk);
+    assertEquals("key", rbk.getObject());
   }
 
 }

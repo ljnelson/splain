@@ -294,12 +294,16 @@ public class MessageFactory<T> implements Serializable {
     if (rawMessage instanceof CharSequence) {
       final String template = rawMessage.toString();
       if (template != null && matcher != null) {
-        final Map<Object, Object> variables = new HashMap<Object, Object>();
+        final Map<?, ?> matcherVariables = matcher.getVariables();
+        final int matcherVariablesSize = matcherVariables == null || matcherVariables.isEmpty() ? 0 : matcherVariables.size();
         final int groupCount = matcher.groupCount();
+        final Map<Object, Object> variables = new HashMap<Object, Object>(matcherVariablesSize + groupCount);
         for (int i = 0; i < groupCount; i++) {
           variables.put(String.format("$%d", Integer.valueOf(i)), matcher.group(i));
         }
-        variables.putAll(matcher.getVariables());
+        if (matcherVariablesSize > 0) {
+          variables.putAll(matcherVariables);
+        }
         returnValue = TemplateRuntime.eval(template, variables);
       } else {
         returnValue = rawMessage;
@@ -557,7 +561,7 @@ public class MessageFactory<T> implements Serializable {
       if (other == this) {
         return true;
       } else if (other != null && this.getClass().equals(other.getClass())) {
-        final Selector<?> him = (Selector<?>)other;
+        final Selector him = (Selector)other;
         final Object key = this.getKey();
         if (key == null) {
           if (him.getKey() != null) {

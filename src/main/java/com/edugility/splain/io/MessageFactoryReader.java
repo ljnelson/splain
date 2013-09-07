@@ -470,9 +470,12 @@ public class MessageFactoryReader implements Closeable {
   /**
    * Returns the {@link Locale} to use for localization.
    *
+   * <p>This method never returns {@code null}.</p>
+   *
    * @return a non-{@code null} {@link Locale}
    */
-  public Locale getLocale() {
+  private final Locale getLocale() {
+    assert this.locale != null;
     return this.locale;
   }
 
@@ -485,7 +488,8 @@ public class MessageFactoryReader implements Closeable {
    *
    * @return a non-{@code null} {@link Control}
    */
-  public Control getControl() {
+  private final Control getControl() {
+    assert this.control != null;
     return this.control;
   }
 
@@ -497,7 +501,7 @@ public class MessageFactoryReader implements Closeable {
    *
    * @return a {@link ResourceBundle}, or {@code null}
    */
-  public final ResourceBundle getDefaultResourceBundle() {
+  private final ResourceBundle getDefaultResourceBundle() {
     return this.defaultResourceBundle;
   }
 

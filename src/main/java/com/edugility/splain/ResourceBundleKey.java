@@ -35,8 +35,8 @@ import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
 
 /**
- * A tuple consisting of a {@link ResourceBundle} and a {@linkplain
- * #getKey() key} into that {@link ResourceBundle}.
+ * An identifier of a particular resource within a {@link
+ * ResourceBundle}.
  *
  * @author <a href="http://about.me/lairdnelson"
  * target="_parent">Laird Nelson</a>
@@ -50,177 +50,263 @@ public final class ResourceBundleKey implements Serializable {
    * Static fields.
    */
 
-    
+
   /**
    * The version of this class for {@linkplain Serializable
    * serialization purposes}.
    */
   private static final long serialVersionUID = 1L;
-    
-  
+
+
   /*
    * Instance fields.
    */
 
 
   /**
-   * The {@link ResourceBundle} component of this {@link
-   * ResourceBundleKey}.
+   * The {@link Control} used to {@linkplain
+   * ResourceBundle#getBundle(String, Locale, ClassLoader, Control)
+   * load} {@link ResourceBundle}s.
+   *
+   * <p>This field is never {@code null}.</p>
+   */
+  private final Control control;
+
+  /**
+   * The {@linkplain Locale locale}-independent name of the {@link
+   * ResourceBundle} into which this {@link ResourceBundleKey}
+   * indexes.
    *
    * <p>This field may be {@code null}.</p>
    */
-  private final ResourceBundle resourceBundle;
-
-  /**
-   * The name used by calling code to retrieve the {@link
-   * ResourceBundle} {@linkplain #resourceBundle used} by this class.
-   * 
-   * <p>This field may be {@code null}.</p>
-   */
   private final String resourceBundleName;
-    
+
   /**
    * The key component of this {@link ResourceBundleKey}.
    *
    * <p>This field is never {@code null}.</p>
    */
   private final String key;
-    
+
+  /**
+   * The {@link ClassLoader} used to {@linkplain
+   * ResourceBundle#getBundle(String, Locale, ClassLoader, Control)
+   * load} {@link ResourceBundle}s.
+   *
+   * <p>This field is never {@code null}.</p>
+   */
+  private final ClassLoader bundleLoader;
+
 
   /*
-   * Constructors
+   * Constructors.
    */
 
 
   /**
-   * Creates a new {@link ResourceBundleKey}.
+   * Creates a new {@link ResourceBundleKey} that will return the
+   * supplied {@code key} from its {@link #getObject(Locale)} method.
    *
-   * <p>This constructor calls the {@link
-   * #ResourceBundleKey(ResourceBundle, String, String)}
-   * constructor.</p>
+   * <p>This constructor calls the {@link #ResourceBundleKey(String,
+   * ClassLoader, ResourceBundle.Control, String)} constructor,
+   * passing {@code null} for the first three arguments and the
+   * supplied {@code key} for the fourth.</p>
    *
-   * @param value what would normally be a {@linkplain
-   * ResourceBundle#getObject(String) key into} a {@link
-   * ResourceBundle}, but since no {@link ResourceBundle} can be
-   * supplied to this constructor, the actual value that will be
-   * returned by the {@link #getObject()} method; must not be {@code
+   * @param key the {@link String} to return from the {@link
+   * #getObject(Locale)} method; must not be {@code null}
+   *
+   * @exception IllegalArgumentException if {@code key} is {@code
    * null}
    *
-   * @exception IllegalArgumentException if {@code value} is {@code
-   * null}
-   *
-   * @see #ResourceBundleKey(ResourceBundle, String, String)
-   *
-   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
+   * @see #ResourceBundleKey(String, ClassLoader,
+   * ResourceBundle.Control, String)
    */
-  public ResourceBundleKey(final String value) {
-    this(null, null, value);
+  public ResourceBundleKey(final String key) {
+    this(null, null, null, key);
   }
 
   /**
    * Creates a new {@link ResourceBundleKey}.
    *
-   * <p>This constructor calls the {@link
-   * #ResourceBundleKey(ResourceBundle, String, String)}
-   * constructor.</p>
+   * <p>This constructor calls the {@link #ResourceBundleKey(String,
+   * ClassLoader, ResourceBundle.Control, String)} constructor,
+   * passing the supplied {@code resourceBundleName} as the first
+   * argument, null for the second and third and the supplied {@code
+   * key} for the fourth.</p>
    *
-   * @param resourceBundle the {@link ResourceBundle} that will be
-   * returned by the {@link #getResourceBundle()} method; may be
+   * @param resourceBundleName a fully-qualified class name
+   * identifying a {@link ResourceBundle}; may be {@code null}
+   *
+   * @param key a {@link String} identifying a resource within a
+   * {@link ResourceBundle} identified by the supplied {@code
+   * resourceBundleName} parameter, or, if that parameter is {@code
+   * null} or {@linkplain String#isEmpty() empty}, the value to be
+   * returned from the {@link #getObject(Locale)} method; must not be
    * {@code null}
-   *
-   * @param key the key identifying an {@linkplain
-   * ResourceBundle#getObject(String) value} within the supplied
-   * {@link ResourceBundle} (if the supplied {@link ResourceBundle} is
-   * non-{@code null}; must not be {@code null}
    *
    * @exception IllegalArgumentException if {@code key} is {@code
    * null}
    *
-   * @exception MissingResourceException if {@code resourceBundle} is
-   * non-{@code null} and does not {@linkplain
-   * ResourceBundle#containsKey(String) contain} the supplied {@code
-   * key}
-   *
-   * @see #ResourceBundleKey(ResourceBundle, String, String)
-   *
-   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
+   * @see #ResourceBundleKey(String, ClassLoader,
+   * ResourceBundle.Control, String)
    */
-  public ResourceBundleKey(final ResourceBundle resourceBundle, final String key) {
-    this(resourceBundle, null, key);
+  public ResourceBundleKey(final String resourceBundleName, final String key) {
+    this(resourceBundleName, null, null, key);
   }
 
   /**
    * Creates a new {@link ResourceBundleKey}.
    *
-   * @param resourceBundle the {@link ResourceBundle} that will be
-   * returned by the {@link #getResourceBundle()} method; may be
+   * <p>This constructor calls the {@link #ResourceBundleKey(String,
+   * ClassLoader, ResourceBundle.Control, String)} constructor,
+   * passing the supplied {@code resourceBundleName} as the first
+   * argument, null for the second, the supplied {@code control} for
+   * the third, and the supplied {@code key} for the fourth.</p>
+   *
+   * @param resourceBundleName a fully-qualified class name
+   * identifying a {@link ResourceBundle}; may be {@code null}
+   *
+   * @param control a {@link Control} to use for
+   * instantiating {@link ResourceBundle}s; may be {@code null} in
+   * which case the return value of the {@link
+   * Control#getControl(List)} method&mdash;supplied
+   * with the {@link Control#FORMAT_DEFAULT}
+   * constant&mdash;will be used instead
+   *
+   * @param key a {@link String} identifying a resource within a
+   * {@link ResourceBundle} identified by the supplied {@code
+   * resourceBundleName} parameter, or, if that parameter is {@code
+   * null} or {@linkplain String#isEmpty() empty}, the value to be
+   * returned from the {@link #getObject(Locale)} method; must not be
    * {@code null}
-   *
-   * @param resourceBundleName the name of the supplied {@code
-   * resourceBundle}; may be {@code null}
-   *
-   * @param key the key identifying an {@linkplain
-   * ResourceBundle#getObject(String) value} within the supplied
-   * {@link ResourceBundle} (if the supplied {@link ResourceBundle} is
-   * non-{@code null}; must not be {@code null}
    *
    * @exception IllegalArgumentException if {@code key} is {@code
    * null}
    *
-   * @exception MissingResourceException if {@code resourceBundle} is
-   * non-{@code null} and does not {@linkplain
-   * ResourceBundle#containsKey(String) contain} the supplied {@code
-   * key}
-   *
-   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
+   * @see #ResourceBundleKey(String, ClassLoader,
+   * ResourceBundle.Control, String)
    */
-  public ResourceBundleKey(final ResourceBundle resourceBundle, final String resourceBundleName, final String key) {
+  public ResourceBundleKey(final String resourceBundleName, final Control control, final String key) {
+    this(resourceBundleName, null, control, key);
+  }
+
+  /**
+   * Creates a new {@link ResourceBundleKey}.
+   *
+   * @param resourceBundleName a fully-qualified class name
+   * identifying a {@link ResourceBundle}; may be {@code null}
+   *
+   * @param bundleLoader a {@link ClassLoader} for passing to the
+   * {@link ResourceBundle#getBundle(String, Locale, ClassLoader,
+   * Control)} method; may be {@code null} in which case the return
+   * value of {@link Thread#getContextClassLoader()
+   * Thread.currentThread().getContextClassLoader()} will be used
+   * instead
+   *
+   * @param control a {@link Control} to use for instantiating {@link
+   * ResourceBundle}s; may be {@code null} in which case the return
+   * value of the {@link Control#getControl(List)}
+   * method&mdash;supplied with the {@link Control#FORMAT_DEFAULT}
+   * constant&mdash;will be used instead
+   *
+   * @param key a {@link String} identifying a resource within a
+   * {@link ResourceBundle} identified by the supplied {@code
+   * resourceBundleName} parameter, or, if that parameter is {@code
+   * null} or {@linkplain String#isEmpty() empty}, the value to be
+   * returned from the {@link #getObject(Locale)} method; must not be
+   * {@code null}
+   *
+   * @exception IllegalArgumentException if {@code key} is {@code
+   * null}
+   */
+  public ResourceBundleKey(final String resourceBundleName, ClassLoader bundleLoader, final Control control, final String key) {
     super();
     if (key == null) {
       throw new IllegalArgumentException("key", new NullPointerException("key"));
     }
-    if (resourceBundle != null) {
-      // Trigger a MissingResourceException as early as possible.
-      resourceBundle.getObject(key);
-      assert resourceBundle.containsKey(key);
+    if (control == null) {
+      this.control = Control.getControl(Control.FORMAT_DEFAULT);
+    } else {
+      this.control = control;
     }
+    if (bundleLoader == null) {
+      bundleLoader = Thread.currentThread().getContextClassLoader();
+      if (bundleLoader == null) {
+        bundleLoader = this.getClass().getClassLoader();
+      }
+    }
+    assert bundleLoader != null;
+    this.bundleLoader = bundleLoader;
     this.resourceBundleName = resourceBundleName;
-    this.resourceBundle = resourceBundle;
     this.key = key;
   }
 
-  /**
-   * Returns the {@link ResourceBundle} component of this {@link
-   * ResourceBundleKey}.
-   *
-   * <p>This method may return {@code null}.</p>
-   *
-   * @return the {@link ResourceBundle} component of this {@link
-   * ResourceBundleKey}, or {@code null}
-   *
-   * @see #ResourceBundleKey(ResourceBundle, String, String)
+
+  /*
+   * Instance methods.
    */
-  private final ResourceBundle getResourceBundle() {
-    return this.resourceBundle;
+
+
+  /**
+   * Returns the {@link Control} that will be used by this {@link
+   * ResourceBundleKey} in {@linkplain
+   * ResourceBundle#getBundle(String, Locale, ClassLoader, Control)
+   * loading} {@link ResourceBundle}s.
+   *
+   * <p>This method never returns {@code null}.</p>
+   *
+   * @return a non-{@code null} {@link Control}
+   */
+  private final Control getControl() {
+    final Control returnValue;
+    if (this.control == null) {
+      returnValue = Control.getControl(Control.FORMAT_DEFAULT);
+    } else {
+      returnValue = this.control;
+    }
+    return returnValue;
   }
 
   /**
-   * Returns the name of the {@linkplain #getResourceBundle()
-   * affiliated <code>ResourceBundle</code>}, or {@code null} if no
-   * name was supplied at {@linkplain
-   * #ResourceBundleKey(ResourceBundle, String, string) construction
-   * time}.
+   * @exception MissingResourceException
+   */
+  private final ResourceBundle getResourceBundle(Locale locale) {
+    final ResourceBundle returnValue;
+    final String resourceBundleName = this.getResourceBundleName();
+    if (resourceBundleName == null) {
+      returnValue = null;
+    } else {
+      if (locale == null) {
+        locale = Locale.getDefault();
+      }
+      assert locale != null;
+      Control control = this.getControl();
+      if (control == null) {
+        control = Control.getControl(Control.FORMAT_DEFAULT);
+      }
+      assert control != null;
+      assert this.bundleLoader != null;
+      returnValue = ResourceBundle.getBundle(resourceBundleName, locale, this.bundleLoader, control);
+    }
+    return returnValue;
+  }
+
+  /**
+   *
    *
    * <p>This method may return {@code null}.</p>
    *
-   * @return the name of this {@link ResourceBundleKey}'s {@linkplain
-   * #getResourceBundle() affiliated <code>ResourceBundle</code>}, or
-   * {@code null}
+   * @return a {@linkplain Locale locale}-indepdendent name of a
+   * {@link ResourceBundle} to load, or {@code null}
    *
-   * @see #ResourceBundleKey(ResourceBundle, String, String)
+   * @see #ResourceBundleKey(Control, String, String)
    */
   private final String getResourceBundleName() {
     return this.resourceBundleName;
+  }
+
+  private final ClassLoader getBundleLoader() {
+    return this.bundleLoader;
   }
 
   /**
@@ -238,47 +324,71 @@ public final class ResourceBundleKey implements Serializable {
   }
 
   /**
-   * Returns the {@linkplain ResourceBundle#getObject(String) value}
-   * corresponding to this {@link ResourceBundleKey}.
+   * Attempts to {@linkplain ResourceBundle#getBundle(String, Locale,
+   * ClassLoader, Control) load} the {@link ResourceBundle} identified
+   * by this {@link ResourceBundleKey} and to return the resource in
+   * that bundle identified by this {@link ResourceBundleKey}.
    *
-   * <p>This method never returns {@code null}.</p>
+   * <p>If this {@link ResourceBundleKey} was constructed with a
+   * {@code null} resource bundle name, then the key that was supplied
+   * at construction time is simply returned as is.</p>
+   * 
+   * <p>This method may return {@code null} in rare edge cases
+   * only.</p>
    *
-   * @return a non-{@code null} {@link Object} representing the value
-   * corresponding to this {@link ResourceBundleKey}
+   * @param locale the {@link Locale} for which an {@link Object}
+   * should be retrieved; may be {@code null} in which case the return
+   * value of the {@link Locale#getDefault()} method will be used
+   * instead
    *
-   * @see ResourceBundle#getObject(String)
+   * @return a resource, or {@code null}
+   *
+   * @exception MissingResourceException if either an appropriate
+   * {@link ResourceBundle} could not be {@linkplain
+   * ResourceBundle#getBundle(String, Locale, ClassLoader, Control)
+   * loaded} or if the relevant resource within that {@link
+   * ResourceBundle} does not {@linkplain
+   * ResourceBundle#containsKey(String) exist}
    */
-  public final Object getObject() {
-    final Object returnValue;
-    final ResourceBundle resourceBundle = this.getResourceBundle();
-    if (resourceBundle == null) {
-      returnValue = this.getKey();
+  public final Object getObject(final Locale locale) {
+    Object returnValue = null;
+    final ResourceBundle rb = this.getResourceBundle(locale);
+    final String key = this.getKey();
+    if (rb != null && key != null) {
+      returnValue = rb.getObject(key);
     } else {
-      returnValue = resourceBundle.getObject(this.getKey());
+      returnValue = key;
     }
     return returnValue;
   }
 
   /**
-   * Returns a hashcode for this {@link ResourceBundleKey}.
+   * Returns a hash code for this {@link ResourceBundleKey}.
    *
-   * @return a hashcode for this {@link ResourceBundleKey}
+   * @return a hash code for this {@link ResourceBundleKey}
    */
   @Override
   public final int hashCode() {
     int result = 17;
 
-    final ResourceBundle resourceBundle = this.getResourceBundle();
-    if (resourceBundle != null) {
-      final Object keySet = resourceBundle.keySet();
-      if (keySet != null) {
-        result = result * 37 + keySet.hashCode();
-      }
+    final Object control = this.getControl();
+    if (control != null) {
+      result = result * 37 + control.hashCode();
+    }
+
+    final Object resourceBundleName = this.getResourceBundleName();
+    if (resourceBundleName != null) {
+      result = result * 37 + resourceBundleName.hashCode();
     }
 
     final Object key = this.getKey();
     if (key != null) {
       result = result * 37 + key.hashCode();
+    }
+
+    final Object bundleLoader = this.getBundleLoader();
+    if (bundleLoader != null) {
+      result = result * 37 + bundleLoader.hashCode();
     }
 
     return result;
@@ -287,14 +397,6 @@ public final class ResourceBundleKey implements Serializable {
   /**
    * Returns {@code true} if the supplied {@link Object} is equal to
    * this {@link ResourceBundleKey}; {@code false} otherwise.
-   *
-   * <p>For this method to return {@code true}, the supplied {@link
-   * Object} must {@linkplain Object#getClass() have a
-   * <code>Class</code>} that is equal to this {@link
-   * ResourceBundleKey}'s {@link Object#getClass() Class}, and its
-   * {@linkplain #getKey() key} and {@linkplain #getResourceBundle()
-   * associated <code>ResourceBundle</code>}'s {@link
-   * ResourceBundle#keySet() keySet} must be equal.</p>
    *
    * @param other the {@link Object} to test; may be {@code null}
    *
@@ -308,24 +410,43 @@ public final class ResourceBundleKey implements Serializable {
       return true;
     } else if (other != null && this.getClass().equals(other.getClass())) {
       final ResourceBundleKey him = (ResourceBundleKey)other;
-      final ResourceBundle resourceBundle = this.getResourceBundle();
-      final ResourceBundle hisRb = him.getResourceBundle();
-      if (resourceBundle == null) {
-        if (hisRb != null) {
+
+      final Object key = this.getKey();
+      if (key == null) {
+        if (him.getKey() != null) {
           return false;
         }
-      } else if (hisRb == null) {
+      } else if (!key.equals(him.getKey())) {
         return false;
-      } else if (!resourceBundle.equals(hisRb)) {
-        final Object keys = resourceBundle.keySet();
-        if (keys == null) {
-          if (hisRb.keySet() != null) {
-            return false;
-          }
-        } else if (!keys.equals(hisRb.keySet())) {
+      }
+
+      final Object resourceBundleName = this.getResourceBundleName();
+      if (resourceBundleName == null) {
+        if (him.getResourceBundleName() != null) {
           return false;
         }
+      } else if (!resourceBundleName.equals(him.getResourceBundleName())) {
+        return false;
       }
+
+      final Object control = this.getControl();
+      if (control == null) {
+        if (him.getControl() != null) {
+          return false;
+        }
+      } else if (!control.equals(him.getControl())) {
+        return false;
+      }
+
+      final Object bundleLoader = this.getBundleLoader();
+      if (bundleLoader == null) {
+        if (him.getBundleLoader() != null) {
+          return false;
+        }
+      } else if (!bundleLoader.equals(him.getBundleLoader())) {
+        return false;
+      }
+
       return true;
     } else {
       return false;
@@ -336,250 +457,35 @@ public final class ResourceBundleKey implements Serializable {
    * Returns a non-{@code null} {@link String} representation of this
    * {@link ResourceBundleKey}.  The representation is of the key
    * itself, <em>not</em> of the return value of the {@link
-   * #getObject()} method.
-   * 
+   * #getObject(Locale)} method.
+   *
    * <p>This method never returns {@code null}.</p>
    *
    * <p>The format of the {@link String} representation returned by
    * this method may change at any time.</p>
    *
    * @return a non-{@code null} {@link String}
-   *
-   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
    */
   @Override
   public final String toString() {
     final StringBuilder sb = new StringBuilder();
     final Object resourceBundleName = this.getResourceBundleName();
-    if (resourceBundleName == null) {
-      final Object resourceBundle = this.getResourceBundle();
-      if (resourceBundle != null) {
-        sb.append(resourceBundle).append("/");
-      }
-    } else {
-      sb.append(resourceBundleName).append("/");
+    if (resourceBundleName != null) {
+      sb.append(resourceBundleName);
     }
+    sb.append("/");
     final Object key = this.getKey();
     if (key != null) {
       sb.append(key);
     }
     return sb.toString();
   }
-  
+
 
   /*
    * Static methods.
    */
 
-
-  /**
-   * Calls the {@link #valueOf(ResourceBundle, Locale, ResourceBundle.Control,
-   * String)} method, passing {@code null}, {@link Locale#getDefault()
-   * Locale.getDefault()}, {@link Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)}, and {@code key}, and
-   * returns its results.
-   *
-   * <p>This method never returns {@code null}.</p>
-   *
-   * @param key the key to parse; must not be {@code null}
-   *
-   * @return a new {@link ResourceBundleKey}; never {@code null}
-   * @exception IllegalArgumentException if {@code key} is {@code null}
-   *
-   * @exception MissingResourceException if a {@link ResourceBundle}
-   * could not be loaded or a resource within a {@link ResourceBundle}
-   * could not be found
-   *
-   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
-   */
-  public static final ResourceBundleKey valueOf(final String key) {
-    return valueOf(null, Locale.getDefault(), Control.getControl(Control.FORMAT_DEFAULT), key);
-  }
-
-  /**
-   * Calls the {@link #valueOf(ResourceBundle, Locale, ResourceBundle.Control,
-   * String)} method, passing {@code defaultResourceBundle}, {@link
-   * Locale#getDefault() Locale.getDefault()}, {@link
-   * Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)}, and {@code key}, and
-   * returns its results.
-   *
-   * <p>This method never returns {@code null}.</p>
-   *
-   * @param defaultResourceBundle the {@link ResourceBundle} that is
-   * used to resolve relative keys; may be {@code null}
-   *
-   * @param key the key to parse; must not be {@code null}
-   *
-   * @return a new {@link ResourceBundleKey}; never {@code null}
-   * @exception IllegalArgumentException if {@code key} is {@code null}
-   *
-   * @exception MissingResourceException if a {@link ResourceBundle}
-   * could not be loaded or a resource within a {@link ResourceBundle}
-   * could not be found
-   *
-   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
-   */
-  public static final ResourceBundleKey valueOf(final ResourceBundle defaultResourceBundle, String key) {
-    return valueOf(defaultResourceBundle, Locale.getDefault(), Control.getControl(Control.FORMAT_DEFAULT), key);
-  }
-
-  /**
-   * Calls the {@link #valueOf(ResourceBundle, Locale, ResourceBundle.Control,
-   * String)} method, passing {@code null}, {@link
-   * Locale#getDefault() Locale.getDefault()}, {@code control}, and
-   * {@code key}, and returns its results.
-   *
-   * <p>This method never returns {@code null}.</p>
-   *
-   * @param control the {@link Control} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader, Control)
-   * loading <code>ResourceBundle</code>s}; if {@code null} then the
-   * return value of {@link Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)} is used instead
-   *
-   * @param key the key to parse; must not be {@code null}
-   *
-   * @return a new {@link ResourceBundleKey}; never {@code null}
-   * @exception IllegalArgumentException if {@code key} is {@code null}
-   *
-   * @exception MissingResourceException if a {@link ResourceBundle}
-   * could not be loaded or a resource within a {@link ResourceBundle}
-   * could not be found
-   *
-   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
-   */
-  public static final ResourceBundleKey valueOf(Control control, String key) {
-    return valueOf(null, Locale.getDefault(), control, key);
-  }
-
-  /**
-   * Calls the {@link #valueOf(ResourceBundle, Locale, ResourceBundle.Control,
-   * String)} method, passing {@code defaultResourceBundle}, {@link
-   * Locale#getDefault() Locale.getDefault()}, {@code control}, and
-   * {@code key}, and returns its results.
-   *
-   * <p>This method never returns {@code null}.</p>
-   *
-   * @param defaultResourceBundle the {@link ResourceBundle} that is
-   * used to resolve relative keys; may be {@code null}
-   *
-   * @param control the {@link Control} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader, Control)
-   * loading <code>ResourceBundle</code>s}; if {@code null} then the
-   * return value of {@link Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)} is used instead
-   *
-   * @param key the key to parse; must not be {@code null}
-   *
-   * @return a new {@link ResourceBundleKey}; never {@code null}
-   * @exception IllegalArgumentException if {@code key} is {@code null}
-   *
-   * @exception MissingResourceException if a {@link ResourceBundle}
-   * could not be loaded or a resource within a {@link ResourceBundle}
-   * could not be found
-   *
-   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
-   */
-  public static final ResourceBundleKey valueOf(final ResourceBundle defaultResourceBundle, Control control, String key) {
-    return valueOf(defaultResourceBundle, Locale.getDefault(), control, key);
-  }
-
-  /**
-   * Calls the {@link #valueOf(ResourceBundle, Locale, ResourceBundle.Control,
-   * String)} method, passing {@code null}, {@code locale}, {@link
-   * Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)} and {@code key}, and
-   * returns its results.
-   *
-   * <p>This method never returns {@code null}.</p>
-   *
-   * @param locale the {@link Locale} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader, Control)
-   * loading <code>ResourceBundle</code>s}; if {@code null} then the
-   * return value of {@link Locale#getDefault()} is used instead
-   *
-   * @param key the key to parse; must not be {@code null}
-   *
-   * @return a new {@link ResourceBundleKey}; never {@code null}
-   * @exception IllegalArgumentException if {@code key} is {@code null}
-   *
-   * @exception MissingResourceException if a {@link ResourceBundle}
-   * could not be loaded or a resource within a {@link ResourceBundle}
-   * could not be found
-   *
-   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
-   */
-  public static final ResourceBundleKey valueOf(Locale locale, String key) {
-    return valueOf(null, locale, Control.getControl(Control.FORMAT_DEFAULT), key);
-  }
-
-  /**
-   * Calls the {@link #valueOf(ResourceBundle, Locale, ResourceBundle.Control,
-   * String)} method, passing {@code defaultResourceBundle}, {@code locale}, {@link
-   * Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)} and {@code key}, and
-   * returns its results.
-   *
-   * <p>This method never returns {@code null}.</p>
-   *
-   * @param defaultResourceBundle the {@link ResourceBundle} that is
-   * used to resolve relative keys; may be {@code null}
-   *
-   * @param locale the {@link Locale} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader, Control)
-   * loading <code>ResourceBundle</code>s}; if {@code null} then the
-   * return value of {@link Locale#getDefault()} is used instead
-   *
-   * @param key the key to parse; must not be {@code null}
-   *
-   * @return a new {@link ResourceBundleKey}; never {@code null}
-   * @exception IllegalArgumentException if {@code key} is {@code null}
-   *
-   * @exception MissingResourceException if a {@link ResourceBundle}
-   * could not be loaded or a resource within a {@link ResourceBundle}
-   * could not be found
-   *
-   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control,
-   * String)
-   */
-  public static final ResourceBundleKey valueOf(final ResourceBundle defaultResourceBundle, Locale locale, String key) {
-    return valueOf(defaultResourceBundle, locale, Control.getControl(Control.FORMAT_DEFAULT), key);
-  }
-
-  /**
-   * Calls the {@link #valueOf(ResourceBundle, Locale,
-   * ResourceBundle.Control, String)} method, passing {@code null},
-   * {@code locale}, {@code control} and {@code key}, and returns its
-   * results.
-   *
-   * <p>This method never returns {@code null}.</p>
-   *
-   * @param locale the {@link Locale} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader, Control)
-   * loading <code>ResourceBundle</code>s}; if {@code null} then the
-   * return value of {@link Locale#getDefault()} is used instead
-   *
-   * @param control the {@link Control} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader, Control)
-   * loading <code>ResourceBundle</code>s}; if {@code null} then the
-   * return value of {@link Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)} is used instead
-   *
-   * @param key the key to parse; must not be {@code null}
-   *
-   * @return a new {@link ResourceBundleKey}; never {@code null}
-   * @exception IllegalArgumentException if {@code key} is {@code null}
-   *
-   * @exception MissingResourceException if a {@link ResourceBundle}
-   * could not be loaded or a resource within a {@link ResourceBundle}
-   * could not be found
-   *
-   * @see #valueOf(ResourceBundle, Locale, ResourceBundle.Control, String)
-   */
-  public static final ResourceBundleKey valueOf(Locale locale, Control control, String key) {
-    return valueOf(null, locale, control, key);
-  }
 
   /**
    * A state that the parser used by the {@link
@@ -590,30 +496,30 @@ public final class ResourceBundleKey implements Serializable {
    * target="_parent">Laird Nelson</a>
    */
   private static enum State {
-    
+
     /**
      * The {@link State} the parser is in to start.
      */
-    START, 
+    START,
 
     /**
      * The {@link State} the parser is in when it is expecting
      * {@linkplain Character#isJavaIdentifierStart(int) the beginning
      * of a Java identifier}.
      */
-    BUNDLE_NAME_SEGMENT_START, 
+    BUNDLE_NAME_SEGMENT_START,
 
     /**
      * The {@link State} the parser is in when it is accumulating
      * {@link ResourceBundle} name characters.
      */
-    BUNDLE_NAME, 
+    BUNDLE_NAME,
 
     /**
      * The {@link State} the parser is in when it is about to begin
      * accumulating key characters.
      */
-    BUNDLE_KEY_START, 
+    BUNDLE_KEY_START,
 
     /**
      * The {@link State} the parser is in when it is accumulating key
@@ -626,13 +532,35 @@ public final class ResourceBundleKey implements Serializable {
    * Returns a new {@link ResourceBundleKey} that is appropriate for
    * the supplied {@code key}.
    *
+   * <p>This method calls the {@link #valueOf(ClassLoader, Control,
+   * String)} method, passing {@code null} for the first two arguments
+   * and the supplied {@code key} for the last one, and returns its
+   * result.</p>
+   *
+   * <p>This method never returns {@code null}.</p>
+   *
+   * @param key the key to parse; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link ResourceBundleKey}
+   *
+   * @exception IllegalArgumentException if {@code key} is {@code null}
+   *
+   * @exception MissingResourceException if a {@link ResourceBundle}
+   * could not be loaded or a resource within a {@link ResourceBundle}
+   * could not be found
+   */
+  public static final ResourceBundleKey valueOf(final String key) {
+    return valueOf(null, null, key);
+  }
+
+  /**
+   * Returns a new {@link ResourceBundleKey} that is appropriate for
+   * the supplied {@code key}.
+   *
    * <p>This method never returns {@code null}.</p>
    *
    * <p>The supplied {@code key} is checked to see if it is {@code
-   * null}.  If so, an {@link IllegalArgumentException} is thrown.</p>
-   *
-   * <p>Next, the key is {@linkplain String#trim() trimmed}.  If this
-   * results in an {@linkplain String#isEmpty() empty key}, an {@link
+   * null} or {@linkplain String#isEmpty() empty}.  If so, an {@link
    * IllegalArgumentException} is thrown.</p>
    *
    * <p>The non-{@linkplain String#isEmpty() empty} key is then parsed
@@ -644,60 +572,67 @@ public final class ResourceBundleKey implements Serializable {
    * the form normally supplied to {@link
    * ResourceBundle#getBundle(String, Locale, ClassLoader,
    * Control)}&mdash;that is, a fully-qualified class name whose
-   * segments are separated with periods ("{@code .}").</li>
+   * segments are separated with periods ("{@code .}").  This method
+   * uses {@link Character#isJavaIdentifierStart(char)} and its ilk to
+   * ensure that the bundle name conforms to the Java Language
+   * Specification requirements for class naming.</li>
    *
    * <li>A <em>bundle key</em> component, separated from the bundle
    * name with a solidus ("{@code /}"; the solidus is part of neither
    * the bundle name nor the bundle key).  A bundle key is an
    * arbitrary {@link String} that is legal for supplying to the
-   * {@link ResourceBundle#getObject(String)} method.</li>
+   * {@link ResourceBundle#getObject(String)} method.  Leading and
+   * trailing whitespace is removed.</li>
    *
    * </ol>
    *
-   * <p>The bundle name component of the supplied {@code key} is
-   * optional.  In this case, if the supplied and {@linkplain
-   * String#trim() trimmed} {@code key} begins with a solidus ("{@code
-   * /}"), then the remainder of the key&mdash;the bundle key&mdash;is
-   * taken to be a key that {@linkplain
-   * ResourceBundle#containsKey(String) is contained} by the supplied
-   * {@code defaultResourceBundle} parameter.</p>
+   * <p>If the bundle name after this parsing and normalization does
+   * not conform lexically to the requirements of a Java class name,
+   * then the entire supplied {@code key} is treated as a simple
+   * {@link String}, and no further attempts will be made to resolve
+   * it against a {@link ResourceBundle}.</p>
    *
    * <p>If the bundle key after this parsing and normalization is
    * {@linkplain String#isEmpty() empty}, then an {@code
    * IllegalArgumentException} is thrown.</p>
    *
-   * <p>If the bundle name after this parsing and normalization is
-   * {@linkplain String#isEmpty() empty}, then the {@link
-   * ResourceBundle} that will be used to resolve bundle keys will be
-   * the supplied {@code defaultResourceBundle} parameter.</p>
+   * <p>Examples:</p>
    *
-   * <p>If for any reason the supplied {@code key} cannot be parsed
-   * into a (possibly empty) bundle name and key component divided by
-   * a solidus:</p>
+   * <blockquote><dl>
    *
-   * <ul>
+   * <dt>{@code com.foobar.ErrorMessages/noSuchElement}</dt>
    *
-   * <li>The code checks to see if the supplied {@code
-   * defaultResourceBundle} parameter {@linkplain
-   * ResourceBundle#containsKey(String) contains} the {@linkplain
-   * String#trim() trimmed} {@code key} parameter.</li>
+   * <dd>A {@link ResourceBundleKey} whose bundle name is {@code
+   * com.foobar.ErrorMessages} and whose bundle key is {@code
+   * noSuchElement}.</dd>
    *
-   * <li>If it does, then the equivalent of {@link
-   * #ResourceBundleKey(ResourceBundle, String) new
-   * ResourceBundleKey(defaultResourceBundle, key.trim())} is
-   * returned.  If it does not, then the equivalent of {@link
-   * #ResourceBundleKey(String) new ResourceBundleKey(key.trim())} is
-   * returned.</li>
+   * <dt>{@code com.foobar.ErrorMessages /noSuchElement}</dt>
    *
-   * </ul>
+   * <dd>A {@link ResourceBundleKey} whose bundle name is {@code null}
+   * and whose bundle key is {@code com.foobar.ErrorMessages
+   * /noSuchElement}.  This is because there is whitespace in the
+   * bundle name, so the entire key is treated as a simple {@link
+   * String}.</dd>
    *
-   * @param defaultResourceBundle the {@link ResourceBundle} that is
-   * used to resolve relative keys; may be {@code null}
+   * <dt>{@code There was no file found with that name.}</dt>
    *
-   * @param locale the {@link Locale} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader, Control)
-   * loading <code>ResourceBundle</code>s}; if {@code null} then the
-   * return value of {@link Locale#getDefault()} is used instead
+   * <dd>A {@link ResourceBundleKey} that wraps a simple {@link
+   * String} consisting of the text given.</dd>
+   *
+   * <dt>{@code com.foobar.ErrorMessages/  noSuchElement}</dt>
+   *
+   * <dd>A {@link ResourceBundleKey} whose bundle name is {@code
+   * com.foobar.ErrorMessages} and whose bundle key is {@code
+   * noSuchElement}.</dd>
+   *
+   * </dl></blockquote>
+   *
+   * @param bundleLoader the {@link ClassLoader} to pass (ultimately)
+   * to the {@link ResourceBundle#getBundle(String, Locale,
+   * ClassLoader, Control)} method; if {@code null} then the return
+   * value of {@link Thread#getContextClassLoader()
+   * Thread.currentThread().getContextClassLoader()} will be used
+   * instead
    *
    * @param control the {@link Control} to use when {@linkplain
    * ResourceBundle#getBundle(String, Locale, ClassLoader, Control)
@@ -715,24 +650,12 @@ public final class ResourceBundleKey implements Serializable {
    * could not be loaded or a resource within a {@link ResourceBundle}
    * could not be found
    */
-  public static final ResourceBundleKey valueOf(final ResourceBundle defaultResourceBundle, Locale locale, Control control, String key) {
+  public static final ResourceBundleKey valueOf(final ClassLoader bundleLoader, final Control control, String key) {
     if (key == null) {
       throw new IllegalArgumentException("key", new NullPointerException("key"));
     } else if (key.isEmpty()) {
       throw new IllegalArgumentException("key.isEmpty()");
     }
-    key = key.trim();
-    assert key != null;
-    if (key.isEmpty()) {
-      throw new IllegalArgumentException("key.trim().isEmpty()");
-    }
-    if (locale == null) {
-      locale = Locale.getDefault();
-    }
-    if (control == null) {
-      control = Control.getControl(Control.FORMAT_DEFAULT);
-    }
-    final ResourceBundleKey returnValue;
 
     State state = State.START;
 
@@ -741,11 +664,12 @@ public final class ResourceBundleKey implements Serializable {
 
     final char[] keyChars = key.toCharArray();
     assert keyChars != null;
-    assert keyChars.length > 0;
+    final int keyCharsLength = keyChars.length;
+    assert keyCharsLength > 0;
 
     final StringBuilder sb = new StringBuilder();
 
-    for (int i = 0; i < keyChars.length; i++) {
+    for (int i = 0; i < keyCharsLength; i++) {
       final char c = keyChars[i];
       switch (state) {
 
@@ -753,12 +677,7 @@ public final class ResourceBundleKey implements Serializable {
       case START:
         switch (c) {
         case '/':
-          bundleName = "";
-          if (keyChars.length == 1) {
-            throw new IllegalArgumentException("key.equals(\"/\")");
-          }
-          state = State.BUNDLE_KEY_START;
-          break;
+          throw new IllegalArgumentException(String.format("Malformed key: %s", key));
         default:
           if (Character.isJavaIdentifierStart(c)) {
             state = State.BUNDLE_NAME;
@@ -787,11 +706,15 @@ public final class ResourceBundleKey implements Serializable {
       case BUNDLE_NAME:
         switch (c) {
         case '.':
-          sb.append(c);
+          sb.append('.');
           state = State.BUNDLE_NAME_SEGMENT_START;
           break;
         case '/':
-          bundleName = sb.toString();
+          if (sb.length() <= 0) {
+            bundleName = null;
+          } else {
+            bundleName = sb.toString();
+          }
           sb.setLength(0);
           state = State.BUNDLE_KEY_START;
           break;
@@ -831,27 +754,19 @@ public final class ResourceBundleKey implements Serializable {
     case BUNDLE_NAME:
       bundleName = null;
       bundleKey = sb.toString();
+      sb.setLength(0);
       break;
     default:
       throw new IllegalArgumentException(String.format("Malformed key: %s", key));
     }
 
-    assert bundleKey != null;    
-    assert !bundleKey.isEmpty();
-    
-    if (bundleName == null) {
-      if (defaultResourceBundle != null && defaultResourceBundle.containsKey(bundleKey)) {
-        returnValue = new ResourceBundleKey(defaultResourceBundle, bundleKey);
-      } else {
-        returnValue = new ResourceBundleKey(bundleKey);
-      }
-    } else if (bundleName.isEmpty()) {
-      returnValue = new ResourceBundleKey(defaultResourceBundle, bundleKey);
-    } else {
-      final ResourceBundle rb = ResourceBundle.getBundle(bundleName, locale, control);
-      assert rb != null;
-      returnValue = new ResourceBundleKey(rb, bundleName, bundleKey);
+    assert bundleKey != null;
+    bundleKey = bundleKey.trim();
+    if (bundleKey.isEmpty()) {
+      throw new IllegalArgumentException(String.format("Malformed key: %s", key));
     }
+
+    final ResourceBundleKey returnValue = new ResourceBundleKey(bundleName, bundleLoader, control, bundleKey);
     return returnValue;
   }
 

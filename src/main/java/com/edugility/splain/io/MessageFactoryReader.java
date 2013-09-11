@@ -114,11 +114,7 @@ public class MessageFactoryReader implements Closeable {
    */
   private final LineNumberReader reader;
 
-  /**
-   * The {@link Locale} in effect for localization when loading new
-   * {@link ResourceBundle}s.  This field is never {@code null}.
-   */
-  private final Locale locale;
+  private final ClassLoader classLoader;
 
   /**
    * A {@link Control} for loading {@link ResourceBundle}s.  This
@@ -127,235 +123,11 @@ public class MessageFactoryReader implements Closeable {
   private final Control control;
 
   /**
-   * A {@link ResourceBundle} that otherwise unqualified keys are
-   * resolved against.
-   *
-   * <p>This field may be {@code null}.</p>
-   *
-   * @see #getDefaultResourceBundle()
-   */
-  private final ResourceBundle defaultResourceBundle;
-
-  /**
-   * Creates a new {@link MessageFactoryReader}.
-   *
-   * <p>This constructor calls the {@link
-   * #MessageFactoryReader(String, ResourceBundle, Locale,
-   * ResourceBundle.Control)} constructor supplying it with
-   * {@code resourceName}, {@code null}, {@link Locale#getDefault()
-   * Locale.getDefault()}, and {@link Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)}.</p>
-   *
-   * @param resourceName the name of a resource to be loaded via the
-   * {@link ClassLoader#getResource(String)} method; must not be
-   * {@code null}
-   *
-   * @exception IllegalArgumentException if {@code resourceName} is
-   * {@code null} or identifies a resource that could not be opened
-   *
-   * @exception IOException if an input or output error occurs
-   */
-  public MessageFactoryReader(final String resourceName) throws IOException {
-    this(resourceName, null, Locale.getDefault(), Control.getControl(Control.FORMAT_DEFAULT));
-  }
-
-  /**
-   * Creates a new {@link MessageFactoryReader}.
-   *
-   * <p>This constructor calls the {@link
-   * #MessageFactoryReader(String, ResourceBundle, Locale,
-   * ResourceBundle.Control)} constructor supplying it with {@code
-   * resourceName}, {@code defaultResourceBundle}, {@link
-   * Locale#getDefault() Locale.getDefault()}, and {@link
-   * Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)}.</p>
-   *
-   * @param resourceName the name of a resource to be loaded via the
-   * {@link ClassLoader#getResource(String)} method; must not be
-   * {@code null}
-   *
-   * @param defaultResourceBundle a {@link ResourceBundle} to use to
-   * resolve relative keys; may be {@code null}
-   *
-   * @exception IllegalArgumentException if {@code resourceName} is
-   * {@code null} or identifies a resource that could not be opened
-   *
-   * @exception IOException if an input or output error occurs
-   */
-  public MessageFactoryReader(final String resourceName, final ResourceBundle defaultResourceBundle) throws IOException {
-    this(resourceName, defaultResourceBundle, Locale.getDefault(), Control.getControl(Control.FORMAT_DEFAULT));
-  }
-
-  /**
-   * Creates a new {@link MessageFactoryReader}.
-   *
-   * <p>This constructor calls the {@link
-   * #MessageFactoryReader(String, ResourceBundle, Locale, ResourceBundle.Control)}
-   * constructor supplying it with {@code resourceName}, {@code null},
-   * {@link Locale#getDefault() Locale.getDefault()} and {@link
-   * Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)}.</p>
-   *
-   * @param resourceName the name of a resource to be loaded via the
-   * {@link ClassLoader#getResource(String)} method; must not be
-   * {@code null}
-   *
-   * @param control a {@link Control} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader,
-   * ResourceBundle.Control) loading <code>ResourceBundle</code>s}; if
-   * {@code null} then {@link Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)} will be used instead
-   *
-   * @exception IllegalArgumentException if {@code resourceName} is
-   * {@code null} or identifies a resource that could not be opened
-   *
-   * @exception IOException if an input or output error occurs
-   */
-  public MessageFactoryReader(final String resourceName, final Control control) throws IOException {
-    this(resourceName, null, Locale.getDefault(), control);
-  }
-
-  /**
-   * Creates a new {@link MessageFactoryReader}.
-   *
-   * <p>This constructor calls the {@link
-   * #MessageFactoryReader(String, ResourceBundle, Locale,
-   * ResourceBundle.Control)} constructor supplying it with {@code
-   * resourceName}, {@code null}, {@code locale} and {@link
-   * Locale#getDefault() Locale.getDefault()} and {@link
-   * Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)}.</p>
-   *
-   * @param resourceName the name of a resource to be loaded via the
-   * {@link ClassLoader#getResource(String)} method; must not be
-   * {@code null}
-   *
-   * @param locale a {@link Locale} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader,
-   * ResourceBundle.Control) loading <code>ResourceBundle</code>s}; if
-   * {@code null} then {@link Locale#getDefault() Locale.getDefault()}
-   * will be used instead
-   *
-   * @exception IllegalArgumentException if {@code resourceName} is
-   * {@code null} or identifies a resource that could not be opened
-   *
-   * @exception IOException if an input or output error occurs
-   */
-  public MessageFactoryReader(final String resourceName, final Locale locale) throws IOException {
-    this(resourceName, null, locale, Control.getControl(Control.FORMAT_DEFAULT));
-  }
-
-  /**
-   * Creates a new {@link MessageFactoryReader}.
-   *
-   * <p>This constructor calls the {@link
-   * #MessageFactoryReader(String, ResourceBundle, Locale, ResourceBundle.Control)}
-   * constructor supplying it with {@code resourceName}, {@code null},
-   * {@code locale} and {@code control}.</p>
-   *
-   * @param resourceName the name of a resource to be loaded via the
-   * {@link ClassLoader#getResource(String)} method; must not be
-   * {@code null}
-   *
-   * @param locale a {@link Locale} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader,
-   * ResourceBundle.Control) loading <code>ResourceBundle</code>s}; if
-   * {@code null} then {@link Locale#getDefault() Locale.getDefault()}
-   * will be used instead
-   *
-   * @param control a {@link Control} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader,
-   * ResourceBundle.Control) loading <code>ResourceBundle</code>s}; if
-   * {@code null} then {@link Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)} will be used instead
-   *
-   * @exception IllegalArgumentException if {@code resourceName} is
-   * {@code null} or identifies a resource that could not be opened
-   *
-   * @exception IOException if an input or output error occurs
-   */
-  public MessageFactoryReader(final String resourceName, final Locale locale, final Control control) throws IOException {
-    this(resourceName, null, locale, control);
-  }
-
-  /**
-   * Creates a new {@link MessageFactoryReader}.
-   *
-   * <p>This constructor calls the {@link
-   * #MessageFactoryReader(String, ResourceBundle, Locale, ResourceBundle.Control)}
-   * constructor supplying it with {@code resourceName}, {@code
-   * defaultResourceBundle}, {@code locale}, and {@link
-   * Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)}.</p>
-   *
-   * @param resourceName the name of a resource to be loaded via the
-   * {@link ClassLoader#getResource(String)} method; must not be
-   * {@code null}
-   *
-   * @param defaultResourceBundle a {@link ResourceBundle} to use to
-   * resolve relative keys; may be {@code null}
-   *
-   * @param locale a {@link Locale} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader,
-   * ResourceBundle.Control) loading <code>ResourceBundle</code>s}; if
-   * {@code null} then {@link Locale#getDefault() Locale.getDefault()}
-   * will be used instead
-   *
-   * @exception IllegalArgumentException if {@code resourceName} is
-   * {@code null} or identifies a resource that could not be opened
-   *
-   * @exception IOException if an input or output error occurs
-   */
-  public MessageFactoryReader(final String resourceName, final ResourceBundle defaultResourceBundle, final Locale locale) throws IOException {
-    this(resourceName, defaultResourceBundle, locale, Control.getControl(Control.FORMAT_DEFAULT));
-  }
-
-  /**
-   * Creates a new {@link MessageFactoryReader}.
-   *
-   * <p>This constructor calls the {@link
-   * #MessageFactoryReader(String, ResourceBundle, Locale,
-   * ResourceBundle.Control)} constructor supplying it with {@code
-   * resourceName}, {@code defaultResourceBundle}, {@link
-   * Locale#getDefault() Locale.getDefault()} and {@code control}.</p>
-   *
-   * @param resourceName the name of a resource to be loaded via the
-   * {@link ClassLoader#getResource(String)} method; must not be
-   * {@code null}
-   *
-   * @param defaultResourceBundle a {@link ResourceBundle} to use to
-   * resolve relative keys; may be {@code null}
-   *
-   * @param control a {@link Control} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader,
-   * ResourceBundle.Control) loading <code>ResourceBundle</code>s}; if
-   * {@code null} then {@link Control#getControl(List)
-   * Control.getControl(Control.FORMAT_DEFAULT)} will be used instead
-   *
-   * @exception IllegalArgumentException if {@code resourceName} is
-   * {@code null} or identifies a resource that could not be opened
-   *
-   * @exception IOException if an input or output error occurs
-   */
-  public MessageFactoryReader(final String resourceName, final ResourceBundle defaultResourceBundle, final Control control) throws IOException {
-    this(resourceName, defaultResourceBundle, Locale.getDefault(), control);
-  }
-
-  /**
    * Creates a new {@link MessageFactoryReader}.
    *
    * @param resourceName the name of a resource to be loaded via the
    * {@link ClassLoader#getResource(String)} method; must not be
    * {@code null}
-   *
-   * @param defaultResourceBundle a {@link ResourceBundle} to use to
-   * resolve relative keys; may be {@code null}
-   *
-   * @param locale a {@link Locale} to use when {@linkplain
-   * ResourceBundle#getBundle(String, Locale, ClassLoader,
-   * ResourceBundle.Control) loading <code>ResourceBundle</code>s}; if
-   * {@code null} then {@link Locale#getDefault() Locale.getDefault()}
-   * will be used instead
    *
    * @param rbControl a {@link Control} to use when {@linkplain
    * ResourceBundle#getBundle(String, Locale, ClassLoader,
@@ -368,7 +140,7 @@ public class MessageFactoryReader implements Closeable {
    *
    * @exception IOException if an input or output error occurs
    */
-  public MessageFactoryReader(final String resourceName, final ResourceBundle defaultResourceBundle, final Locale locale, final Control rbControl) throws IOException {
+  public MessageFactoryReader(final String resourceName, ClassLoader classLoader, final Control rbControl) throws IOException {
     super();
     if (resourceName == null) {
       throw new IllegalArgumentException("resourceName", new NullPointerException("resourceName"));
@@ -378,46 +150,19 @@ public class MessageFactoryReader implements Closeable {
       throw new IllegalArgumentException("resourceName", new IllegalStateException("resource not found"));
     }
     this.reader = new LineNumberReader(new BufferedReader(new InputStreamReader(resource)));
-    if (locale == null) {
-      this.locale = Locale.getDefault();
-    } else {
-      this.locale = locale;
+    if (classLoader == null) {
+      classLoader = Thread.currentThread().getContextClassLoader();
+      if (classLoader == null) {
+        classLoader = this.getClass().getClassLoader();
+      }
     }
-    assert this.locale != null;
+    assert classLoader != null;
+    this.classLoader = classLoader;
     if (rbControl == null) {
       this.control = Control.getControl(Control.FORMAT_DEFAULT);
     } else {
       this.control = rbControl;
     }
-    this.defaultResourceBundle = defaultResourceBundle;
-  }
-
-  public MessageFactoryReader(final Reader reader) {
-    this(reader, null, Locale.getDefault(), Control.getControl(Control.FORMAT_DEFAULT));
-  }
-
-  public MessageFactoryReader(final Reader reader, final ResourceBundle defaultResourceBundle) {
-    this(reader, defaultResourceBundle, Locale.getDefault(), Control.getControl(Control.FORMAT_DEFAULT));
-  }
-
-  public MessageFactoryReader(final Reader reader, final Locale locale) {
-    this(reader, null, locale, Control.getControl(Control.FORMAT_DEFAULT));
-  }
-
-  public MessageFactoryReader(final Reader reader, final ResourceBundle defaultResourceBundle, final Locale locale) {
-    this(reader, defaultResourceBundle, locale, Control.getControl(Control.FORMAT_DEFAULT));
-  }
-
-  public MessageFactoryReader(final Reader reader, final Control control) {
-    this(reader, null, Locale.getDefault(), control);
-  }
-
-  public MessageFactoryReader(final Reader reader, final ResourceBundle defaultResourceBundle, final Control control) {
-    this(reader, defaultResourceBundle, Locale.getDefault(), control);
-  }
-
-  public MessageFactoryReader(final Reader reader, final Locale locale, final Control rbControl) {
-    this(reader, null, locale, rbControl);
   }
 
   /**
@@ -425,14 +170,6 @@ public class MessageFactoryReader implements Closeable {
    *
    * @param reader the {@link Reader} to read from; must not be {@code
    * null}
-   *
-   * @param defaultResourceBundle the {@link ResourceBundle} to use to
-   * resolve unqualified keys against; may be {@code null}
-   *
-   * @param locale the {@link Locale} to use for localization when
-   * loading new {@link ResourceBundle}s; if {@code null} then the
-   * {@linkplain Locale#getDefault() default <code>Locale</code>} will
-   * be used instead
    *
    * @param rbControl the {@link Control} to use when loading new
    * {@link ResourceBundle}s; if {@code null} then {@link
@@ -442,7 +179,7 @@ public class MessageFactoryReader implements Closeable {
    * @exception IllegalArgumentException if {@code reader} is {@code
    * null}
    */
-  public MessageFactoryReader(final Reader reader, final ResourceBundle defaultResourceBundle, final Locale locale, final Control rbControl) {
+  public MessageFactoryReader(final Reader reader, ClassLoader classLoader, final Control rbControl) {
     super();
     if (reader == null) {
       throw new IllegalArgumentException("reader", new NullPointerException("reader"));
@@ -454,29 +191,19 @@ public class MessageFactoryReader implements Closeable {
     } else {
       this.reader = new LineNumberReader(new BufferedReader(reader));
     }
-    if (locale == null) {
-      this.locale = Locale.getDefault();
-    } else {
-      this.locale = locale;
+    if (classLoader == null) {
+      classLoader = Thread.currentThread().getContextClassLoader();
+      if (classLoader == null) {
+        classLoader = this.getClass().getClassLoader();
+      }
     }
+    assert classLoader != null;
+    this.classLoader = classLoader;
     if (rbControl == null) {
       this.control = Control.getControl(Control.FORMAT_DEFAULT);
     } else {
       this.control = rbControl;
     }
-    this.defaultResourceBundle = defaultResourceBundle;
-  }
-
-  /**
-   * Returns the {@link Locale} to use for localization.
-   *
-   * <p>This method never returns {@code null}.</p>
-   *
-   * @return a non-{@code null} {@link Locale}
-   */
-  private final Locale getLocale() {
-    assert this.locale != null;
-    return this.locale;
   }
 
   /**
@@ -489,26 +216,14 @@ public class MessageFactoryReader implements Closeable {
    * @return a non-{@code null} {@link Control}
    */
   private final Control getControl() {
-    assert this.control != null;
     return this.control;
   }
 
   /**
-   * Returns the default {@link ResourceBundle} to resolve relative
-   * keys against.
-   *
-   * <p>This method may return {@code null}.</p>
-   *
-   * @return a {@link ResourceBundle}, or {@code null}
-   */
-  private final ResourceBundle getDefaultResourceBundle() {
-    return this.defaultResourceBundle;
-  }
-
-  /**
    * Reads from this {@link MessageFactoryReader}'s {@linkplain
-   * #MessageFactoryReader(Reader) affiliated <tt>Reader</tt>} and
-   * builds a {@link MessageFactoryReader} from the results.
+   * #MessageFactoryReader(Reader, ClassLoader,
+   * ResourceBundle.Control) affiliated <tt>Reader</tt>} and builds a
+   * {@link MessageFactoryReader} from the results.
    *
    * <p>To avoid resource leaks, this {@link MessageFactoryReader}
    * <strong>must</strong> be {@linkplain #close() closed} at some
@@ -596,7 +311,6 @@ public class MessageFactoryReader implements Closeable {
     State state = State.NORMAL;
     final Set<Pattern<T>> patterns = new LinkedHashSet<Pattern<T>>();
     StringBuilder message = null;
-    final ResourceBundle defaultResourceBundle = this.getDefaultResourceBundle();
     String line;
     while ((line = this.reader.readLine()) != null) {
       line = line.trim();
@@ -649,7 +363,7 @@ public class MessageFactoryReader implements Closeable {
           if (message != null) {
             assert message.length() > 0;
             assert !patterns.isEmpty();
-            addPatterns(mf, defaultResourceBundle, message.toString(), patterns);
+            addPatterns(mf, message.toString(), patterns);
             patterns.clear();
             message = null;
           }
@@ -672,13 +386,16 @@ public class MessageFactoryReader implements Closeable {
     }
 
     if (message != null && !patterns.isEmpty()) {
-      addPatterns(mf, defaultResourceBundle, message.toString(), patterns);
+      addPatterns(mf, message.toString(), patterns);
       patterns.clear();
       message = null;
     }
 
-
     return mf;
+  }
+
+  private final ClassLoader getClassLoader() {
+    return this.classLoader;
   }
 
   /**
@@ -718,7 +435,7 @@ public class MessageFactoryReader implements Closeable {
    *
    * @see MessageFactory#addPatterns(ResourceBundleKey, Collection)
    */
-  private final <T> void addPatterns(final MessageFactory<T> mf, final ResourceBundle defaultResourceBundle, final String message, final Collection<? extends Pattern<T>> patterns) {
+  private final <T> void addPatterns(final MessageFactory<T> mf, final String message, final Collection<? extends Pattern<T>> patterns) {
     if (mf == null) {
       throw new IllegalArgumentException("mf", new NullPointerException("mf"));
     }
@@ -731,7 +448,7 @@ public class MessageFactoryReader implements Closeable {
     if (patterns.isEmpty()) {
       throw new IllegalArgumentException("patterns", new IllegalStateException("patterns.isEmpty()"));
     }
-    final ResourceBundleKey rbKey = ResourceBundleKey.valueOf(defaultResourceBundle, this.getLocale(), this.getControl(), message);
+    final ResourceBundleKey rbKey = ResourceBundleKey.valueOf(this.getClassLoader(), this.getControl(), message);
     assert rbKey != null;
     mf.addPatterns(rbKey, patterns);
   }
@@ -784,7 +501,10 @@ public class MessageFactoryReader implements Closeable {
       throw new IllegalArgumentException("resourceName", new NullPointerException("resourceName"));
     }
     final InputStream resource;
-    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    ClassLoader cl = this.getClassLoader();
+    if (cl == null) {
+      cl = Thread.currentThread().getContextClassLoader();
+    }
     if (cl == null) {
       if (resourceName.startsWith("/")) {
         resource = this.getClass().getResourceAsStream(resourceName);

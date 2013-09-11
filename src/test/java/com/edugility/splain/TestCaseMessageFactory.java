@@ -35,7 +35,6 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
 
@@ -56,27 +55,22 @@ public class TestCaseMessageFactory {
 
   @BeforeClass
   public static void setUp() throws IOException {
-    final String rbSource = String.format("foo = Hi, @{$0[0]}, your farg is @{farg}  %n");
-    assertNotNull(rbSource);
-    final StringReader reader = new StringReader(rbSource);
-    rb = new PropertyResourceBundle(reader);
-    reader.close();
+    rb = ResourceBundle.getBundle("TestCaseMessageFactoryBundle");
+    assertNotNull(rb);
   }
 
   @Test
   public void test() throws IOException, ParseException {
-    final ResourceBundleKey rbk = ResourceBundleKey.valueOf(rb, "/foo");
+    final ResourceBundleKey rbk = ResourceBundleKey.valueOf(null, null, "TestCaseMessageFactoryBundle/foo");
     assertNotNull(rbk);
-
     final MessageFactory<Character> mf = new MessageFactory<Character>();
     mf.addPattern(rbk, Pattern.<Character>compile("java.lang.Character(farg = \"blah\"; return true;)"));
     final List<Character> input = Arrays.asList('a');
     assertNotNull(input);
     assertEquals(1, input.size());
     assertEquals(Character.valueOf('a'), input.get(0));
-    final String message = mf.getMessage(input);
-    assertEquals("Hi, a, your farg is blah  ", message);
-    
+    final String message = mf.getMessage(input, null);
+    assertEquals("Hi, a, your farg is blah", message);    
   }
 
 }

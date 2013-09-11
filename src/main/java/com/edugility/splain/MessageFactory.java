@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.MissingResourceException;
@@ -52,19 +53,19 @@ import org.mvel2.templates.TemplateRuntime;
  * create a new instance} and {@linkplain
  * #addPatterns(ResourceBundleKey, Iterable) add <code>Pattern</code>s
  * to it}.  Then pass a {@link List} of items to the {@link
- * #getMessage(List)} method.</p>
+ * #getMessage(List, Locale)} method.</p>
  *
  * <p>This class is not safe for concurrent use by multiple {@link
  * Thread}s.</p>
  *
  * @param <T> the type of {@link Object} used by the {@link
- * #getMessage(List)} method; the type of {@link Object} used by the
+ * #getMessage(List, Locale)} method; the type of {@link Object} used by the
  * {@link Pattern}s that help select messages
  *
  * @author <a href="http://about.me/lairdnelson"
  * target="_parent">Laird Nelson</a>
  *
- * @see #getMessage(List)
+ * @see #getMessage(List, Locale)
  */
 public class MessageFactory<T> implements Serializable {
 
@@ -275,11 +276,11 @@ public class MessageFactory<T> implements Serializable {
    * <blockquote><code>@{$0}</code></blockquote>
    *
    * @param rawMessage the unformatted message as returned by the
-   * {@link #getMessage(List)} method; may be {@code null}
+   * {@link #getMessage(List, Locale)} method; may be {@code null}
    *
    * @param matcher the {@link Matcher} that was used by the {@link
-   * #getMessage(List)} method in producing the {@code rawMessage}
-   * parameter value; may be {@code null}
+   * #getMessage(List, Locale)} method in producing the {@code
+   * rawMessage} parameter value; may be {@code null}
    *
    * @return a formatted version of the supplied {@code rawMessage},
    * which may simply be the supplied {@code rawMessage} if no formatting
@@ -287,7 +288,7 @@ public class MessageFactory<T> implements Serializable {
    *
    * @see TemplateRuntime
    *
-   * @see #getMessage(List)
+   * @see #getMessage(List, Locale)
    */
   protected Object format(final Object rawMessage, final Matcher<T> matcher) {
     final Object returnValue;
@@ -337,7 +338,7 @@ public class MessageFactory<T> implements Serializable {
    *
    * @see #format(Object, Matcher)
    */
-  public String getMessage(final List<? extends T> input) {
+  public String getMessage(final List<? extends T> input, final Locale locale) {
     final String returnValue;
     final Selector<T> selector = this.getSelector(input);
     if (selector == null) {
@@ -347,7 +348,7 @@ public class MessageFactory<T> implements Serializable {
       if (key == null) {
         returnValue = this.convert(this.format(null, selector.getMatcher()));
       } else {
-        returnValue = this.convert(this.format(key.getObject(), selector.getMatcher()));
+        returnValue = this.convert(this.format(key.getObject(locale), selector.getMatcher()));
       }
     }
     return returnValue;
@@ -377,24 +378,24 @@ public class MessageFactory<T> implements Serializable {
   }
 
   /**
-   * Calls {@link #getMessage(List)}, and if the return value is {@code
-   * null}, returns the supplied {@code defaultValue} parameter as the
-   * return value instead.
+   * Calls {@link #getMessage(List, Locale)}, and if the return value
+   * is {@code null}, returns the supplied {@code defaultValue}
+   * parameter as the return value instead.
    *
    * <p>This method may return {@code null}.</p>
    *
    * <p>This method suppresses any {@link MissingResourceException}s
-   * thrown by {@link #getMessage(List)} and returns the supplied
-   * {@code defaultValue} parameter in such cases.</p>
+   * thrown by {@link #getMessage(List, Locale)} and returns the
+   * supplied {@code defaultValue} parameter in such cases.</p>
    *
    * @return a formatted message, or the {@code defaultValue}
    * parameter, or {@code null} if the {@code defaultValue} parameter
    * is {@code null} itself
    */
-  public String getMessage(final List<? extends T> input, final String defaultValue) {
+  public String getMessage(final List<? extends T> input, final Locale locale, final String defaultValue) {
     String returnValue = null;
     try {
-      returnValue = this.getMessage(input);
+      returnValue = this.getMessage(input, locale);
     } catch (final MissingResourceException oops) {
       // TODO: log
       returnValue = null;

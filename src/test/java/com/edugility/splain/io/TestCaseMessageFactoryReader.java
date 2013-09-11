@@ -38,8 +38,10 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
+import java.util.ResourceBundle.Control;
 
 import org.junit.Test;
 
@@ -60,7 +62,7 @@ public class TestCaseMessageFactoryReader {
   @Test
   public void testPrecedence() throws IOException, ParseException {
     final InputStreamReader isr = new InputStreamReader(this.getClass().getResource("/Messages.mc").openStream());
-    final MessageFactoryReader r = new MessageFactoryReader(isr);
+    final MessageFactoryReader r = new MessageFactoryReader(isr, Thread.currentThread().getContextClassLoader(), Control.getControl(Control.FORMAT_DEFAULT));
     final MessageFactory<Object> mf = r.read();
     assertNotNull(mf);
     isr.close();    
@@ -71,7 +73,7 @@ public class TestCaseMessageFactoryReader {
     List<Object> input = Arrays.<Object>asList(illegalArgumentException, sqlException);
     assertNotNull(input);
     
-    String message = mf.getMessage(input);
+    String message = mf.getMessage(input, Locale.getDefault());
     assertNotNull(message);
     assertEquals("There was a database exception.", message);
 
@@ -79,37 +81,10 @@ public class TestCaseMessageFactoryReader {
     input = Arrays.<Object>asList(sqlException, io);
     assertNotNull(input);
 
-    message = mf.getMessage(input);
+    message = mf.getMessage(input, Locale.getDefault());
     assertNotNull(message);
     assertEquals("An unknown error occurred", message);
 
-  }
-
-  @Test
-  public void test() throws IOException, ParseException {
-    final String rbSource = String.format("foo = Hi, @{$0}%n");    
-    assertNotNull(rbSource);
-    final StringReader reader = new StringReader(rbSource);
-    final PropertyResourceBundle rb = new PropertyResourceBundle(reader);
-    reader.close();
-
-    final StringBuilder source = new StringBuilder("java.lang.Exception(message == \"fred\")");
-    source.append(LS);
-    source.append("--").append(LS);
-    source.append("/foo").append(LS);
-    source.append(LS);
-    
-
-    final StringReader sr = new StringReader(source.toString());
-    final MessageFactoryReader r = new MessageFactoryReader(sr, rb);
-    final MessageFactory<Exception> mf = r.read();
-    assertNotNull(mf);
-    final List<Exception> input = Arrays.asList(new Exception("fred"));
-    assertNotNull(input);
-    assertEquals(1, input.size());
-    final Object o = mf.getMessage(input);
-    assertEquals("Hi, [java.lang.Exception: fred]", o);
-    
   }
 
 }

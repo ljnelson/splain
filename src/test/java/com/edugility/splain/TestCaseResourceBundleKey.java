@@ -27,55 +27,52 @@
  */
 package com.edugility.splain;
 
-import java.io.IOException;
-import java.io.StringReader;
-
-import java.text.ParseException;
-
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
-import java.util.PropertyResourceBundle;
-import java.util.ResourceBundle;
-import java.util.ResourceBundle.Control;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.edugility.objexj.Pattern;
 
 import static org.junit.Assert.*;
 
 public class TestCaseResourceBundleKey {
 
-  private static ResourceBundle rb;
-
   public TestCaseResourceBundleKey() {
     super();
   }
 
-  @BeforeClass
-  public static void setUp() throws IOException {
-    final String rbSource = String.format("foo = Hi, @{$0[0]}, your farg is @{farg}  %n");
-    assertNotNull(rbSource);
-    final StringReader reader = new StringReader(rbSource);
-    rb = new PropertyResourceBundle(reader);
-    reader.close();
-  }
-
   @Test
-  public void testValueOf() throws IOException, ParseException {
-    final ResourceBundleKey rbk = ResourceBundleKey.valueOf(rb, "foo");
+  public void testValueOfSlashWithKeyAndWhitespace() {
+    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("a.b.c.d/   key");
     assertNotNull(rbk);
-    assertEquals("Hi, @{$0[0]}, your farg is @{farg}  ", rbk.getObject());
+    assertEquals("value", rbk.getObject(Locale.getDefault()));
   }
 
   @Test
-  public void testCompositeBundleKey() {
+  public void testValueOfWithWhitespace() {
+    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("a.b.c.d  /   key");
+    assertNotNull(rbk);
+    assertEquals("a.b.c.d  /   key", rbk.getObject(Locale.getDefault()));
+  }
+
+  @Test
+  public void testValueOfGoodBundleNameGoodBundleKey() {
     final ResourceBundleKey rbk = ResourceBundleKey.valueOf("a.b.c.d/key");
     assertNotNull(rbk);
-    assertEquals("value", rbk.getObject());
+    assertEquals("value", rbk.getObject(Locale.getDefault()));
+  }
+
+  @Test
+  public void testValueOfBundleKeyOnly() {
+    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("xyz");
+    assertNotNull(rbk);
+    assertEquals("xyz", rbk.getObject(Locale.getDefault()));
+  }
+
+  @Test(expected = MissingResourceException.class)
+  public void testValueOfGoodBundleNameBadBundleKey() {
+    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("a.b.c.d/  nonexistent");
+    assertNotNull(rbk);
+    rbk.getObject(Locale.getDefault());
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -83,35 +80,39 @@ public class TestCaseResourceBundleKey {
     ResourceBundleKey.valueOf("a.b.c.d/");
   }
 
-  @Test(expected = MissingResourceException.class)
-  public void testMissingResource() {
-    ResourceBundleKey.valueOf("a.b.c.d/nonexistent");
-  }
-
-  @Test
-  public void testNoBundleBadKey() {
-    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("xyz");
-    assertNotNull(rbk);
-    assertEquals("xyz", rbk.getObject());
+  @Test(expected = IllegalArgumentException.class)
+  public void testBundleOnlyKeyWithWhitespace() {
+    ResourceBundleKey.valueOf("a.b.c.d/   ");
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testSlashOnly() {
+  public void testValueOfSlashOnly() {
     ResourceBundleKey.valueOf("/");
   }
 
-  @Test
-  public void testSlashWithKey() {
-    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("/key");
-    assertNotNull(rbk);
-    assertEquals("key", rbk.getObject());
+  @Test(expected = IllegalArgumentException.class)
+  public void testValueOfEmptyString() {
+    ResourceBundleKey.valueOf("");
   }
 
-  @Test
-  public void testKeyOnly() {
-    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("key");
-    assertNotNull(rbk);
-    assertEquals("key", rbk.getObject());
+  @Test(expected = IllegalArgumentException.class)
+  public void testValueOfWhitespace() {
+    ResourceBundleKey.valueOf("     ");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testValueOfNull() {
+    ResourceBundleKey.valueOf(null);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testValueOfSlashWithKey() {
+    ResourceBundleKey.valueOf("/key");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testValueOfWhitespaceSlashWithKey() {
+    ResourceBundleKey.valueOf("    /key");
   }
 
 }

@@ -28,17 +28,12 @@
 package com.edugility.splain;
 
 import java.io.IOException;
-import java.io.StringReader;
 
 import java.text.ParseException;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.ResourceBundle.Control;
-
-import org.junit.BeforeClass;
+import java.util.NoSuchElementException;
 import org.junit.Test;
 
 import com.edugility.objexj.Pattern;
@@ -47,21 +42,13 @@ import static org.junit.Assert.*;
 
 public class TestCaseMessageFactory {
 
-  private static ResourceBundle rb;
-
   public TestCaseMessageFactory() {
     super();
   }
 
-  @BeforeClass
-  public static void setUp() throws IOException {
-    rb = ResourceBundle.getBundle("TestCaseMessageFactoryBundle");
-    assertNotNull(rb);
-  }
-
   @Test
   public void test() throws IOException, ParseException {
-    final ResourceBundleKey rbk = ResourceBundleKey.valueOf(null, null, "TestCaseMessageFactoryBundle/foo");
+    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("TestCaseMessageFactoryBundle/foo");
     assertNotNull(rbk);
     final MessageFactory<Character> mf = new MessageFactory<Character>();
     mf.addPattern(rbk, Pattern.<Character>compile("java.lang.Character(farg = \"blah\"; return true;)"));
@@ -70,7 +57,20 @@ public class TestCaseMessageFactory {
     assertEquals(1, input.size());
     assertEquals(Character.valueOf('a'), input.get(0));
     final String message = mf.getMessage(input, null);
-    assertEquals("Hi, a, your farg is blah", message);    
+    assertEquals("Hi, a, your farg is blah", message);
+  }
+
+  @Test
+  public void testGlobalHandler() throws IOException, ParseException {
+    final ResourceBundleKey rbk = ResourceBundleKey.valueOf("${$1[0].message}");
+    final NoSuchElementException nse = new NoSuchElementException("bottom");
+    final IllegalStateException ise = new IllegalStateException("top");
+    final List<Throwable> l = Arrays.<Throwable>asList(ise, nse);
+    final MessageFactory<Throwable> mf = new MessageFactory<Throwable>();
+    mf.addPattern(rbk, Pattern.<Throwable>compile("(java.lang.Exception)$"));
+    final String message = mf.getMessage(l, null);
+    assertEquals("bottom", message);
+
   }
 
 }

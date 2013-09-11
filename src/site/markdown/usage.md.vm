@@ -1,0 +1,86 @@
+<!-- -*- markdown -*- -->
+#*
+
+Please note that Velocity and Markdown are fundamentally incompatible
+with each other, so some links in this source document can never
+render properly in HTML.  On behalf of the Velocity and Maven
+developers I apologize for being unable to work around these flaws.
+
+*#
+
+Usage
+===
+
+Here's how to use `splain` in your project in the most common
+scenario, _viz._ producing intelligent error messages given a chain of
+`Throwable`s.
+
+Add splain to Your Classpath
+---
+
+To use the `splain` project, please see the
+[Dependency Information](dependency-info.html) report for full
+details.
+
+In brief, the following dependency in a Maven project will work:
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>${project.artifactId}</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+Decide Where Your Message Catalog Will Live
+---
+
+`splain` relies on a _message catalog_&mdash;a text file containing
+entries consisting of `objexj` patterns and the messages they select.
+You may place a message catalog anywhere on your application's
+classpath.  (Actually, you may place it anywhere you wish, as long as
+you can figure out how to get a `java.io.Reader` that will read it.)
+
+You should also give thought to the tier that your message catalog
+will belong to.  Will this message catalog be for diagnosing problems
+at the middleware layer?  Or for selecting a message for display
+on a particular user interface?  Answering these questions will help
+you figure out where to place your message catalog, and how many
+message catalogs you will have in your application.  In terms of bang
+for the buck, `splain` is probably best for coming up with messages to
+display for particular UIs.
+
+Decide Where splain Will Actually Run
+---
+
+This is closely related to the prior point.  Will `splain` run in a
+Servlet filter?  Will it run in an interceptor of some kind?
+
+Assemble a Message Catalog
+---
+
+Begin your message catalog by working backwards.  Insert an entry that
+will (if it is ever reached) match all possible errors.  Here is a
+sample entry in a message catalog that I've decided arbitrarily to
+name `Messages.mc`, and to locate in my classpath somewhere:
+
+    (java.lang.Throwable)$
+    --
+    ${$1[0].message}
+
+The first line is an `objexj` pattern.  It matches any `List` whose
+last item ("`$`") is a `Throwable`.  Additionally, as you can see from
+the parentheses, it saves a reference to the `Throwable` so matched.
+
+The second line is a separator (two hyphens) that divides the pattern
+section of this entry from the message.
+
+The third line is the message itself.  In this case, it is an MVEL
+template.  The initial dollar sign ("`$`") followed by an open brace
+("`{`") indicates the start of the template.  The first item in the
+template is a variable with the name of `$1`, which refers to the
+first match in the `objexj` pattern above (the last `Throwable` in the
+input list).  Since a capture group in an `objexj` pattern always
+matches a `List`, we need an index selector ("`[0]`") to identify the
+actual `Throwable` we matched.  Once we have that, we can access its
+`getMessage()` method (its `message` _property_) by referring to it
+using MVEL syntax, and that is ultimately what the value of the
+template is.

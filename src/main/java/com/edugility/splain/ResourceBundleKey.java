@@ -332,7 +332,7 @@ public final class ResourceBundleKey implements Serializable {
    * <p>If this {@link ResourceBundleKey} was constructed with a
    * {@code null} resource bundle name, then the key that was supplied
    * at construction time is simply returned as is.</p>
-   * 
+   *
    * <p>This method may return {@code null} in rare edge cases
    * only.</p>
    *
@@ -472,8 +472,8 @@ public final class ResourceBundleKey implements Serializable {
     final Object resourceBundleName = this.getResourceBundleName();
     if (resourceBundleName != null) {
       sb.append(resourceBundleName);
+      sb.append("/");
     }
-    sb.append("/");
     final Object key = this.getKey();
     if (key != null) {
       sb.append(key);
@@ -532,10 +532,10 @@ public final class ResourceBundleKey implements Serializable {
    * Returns a new {@link ResourceBundleKey} that is appropriate for
    * the supplied {@code key}.
    *
-   * <p>This method calls the {@link #valueOf(ClassLoader, Control,
-   * String)} method, passing {@code null} for the first two arguments
-   * and the supplied {@code key} for the last one, and returns its
-   * result.</p>
+   * <p>This method calls the {@link #valueOf(ClassLoader,
+   * ResourceBundle.Control, String)} method, passing {@code null} for
+   * the first two arguments and the supplied {@code key} for the last
+   * one, and returns its result.</p>
    *
    * <p>This method never returns {@code null}.</p>
    *

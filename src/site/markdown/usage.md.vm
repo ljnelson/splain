@@ -57,30 +57,83 @@ Servlet filter?  Will it run in an interceptor of some kind?
 Assemble a Message Catalog
 ---
 
-Begin your message catalog by working backwards.  Insert an entry that
-will (if it is ever reached) match all possible errors.  Here is a
-sample entry in a message catalog that I've decided arbitrarily to
-name `Messages.mc`, and to locate in my classpath somewhere:
+Begin your message catalog by working backwards.  
 
-    (java.lang.Throwable)$
+<h3>Ensure There Is A Catch-All</h3>
+
+Insert an entry that will (if it is ever reached) match all possible
+errors.  Here is a sample entry in a message catalog that I've decided
+arbitrarily to name `Messages.mc`, and to locate in my classpath
+somewhere:
+
+    ^(java.lang.Throwable)
     --
-    ${$1[0].message}
+    ${$1[0].toString()}
 
 The first line is an `objexj` pattern.  It matches any `List` whose
-last item ("`$`") is a `Throwable`.  Additionally, as you can see from
+first item ("`^`") is a `Throwable`.  Additionally, as you can see from
 the parentheses, it saves a reference to the `Throwable` so matched.
 
 The second line is a separator (two hyphens) that divides the pattern
 section of this entry from the message.
 
-The third line is the message itself.  In this case, it is an MVEL
-template.  The initial dollar sign ("`$`") followed by an open brace
-("`{`") indicates the start of the template.  The first item in the
-template is a variable with the name of `$1`, which refers to the
-first match in the `objexj` pattern above (the last `Throwable` in the
-input list).  Since a capture group in an `objexj` pattern always
-matches a `List`, we need an index selector ("`[0]`") to identify the
-actual `Throwable` we matched.  Once we have that, we can access its
-`getMessage()` method (its `message` _property_) by referring to it
-using MVEL syntax, and that is ultimately what the value of the
-template is.
+The third line is the message itself.  In this case, it's not much of
+a localized message.  It is instead a way using MVEL templates to get
+the matched `Throwable` to print its stack trace.
+
+The first `${` is the indication that an MVEL expression follows.  The
+`$1` variable refers to the first capture group match (the sublist of
+`Throwable`s we matched in our pattern&mdash;in this case this `List`
+has a size of exactly `1`.  The index selector, `[0]` selects the
+first (and only!) item from that sublist, namely the `Throwable` we're
+interested in.  Finally, the `.toString()` is just a method
+call on that `Throwable`, and that will become the final value of the
+MVEL expression.
+
+You can see how this entry will match any `List` of `Throwable`s
+handed to it and will produce a suitable message.  The message,
+however, is not very interesting.
+
+<h3>Set Up A ResourceBundle</h3>
+
+The whole point of `splain` is to provide more intelligent and
+localized error messages.  So let's make sure we have a
+`ResourceBundle` set up with a couple of error messages.  We'll set
+them up here, and explain them a little later.
+
+Let's create a file called `DatabaseErrorMessages.properties` in Java
+properties format and save it somewhere in the classpath.  We'll give
+it a single property setting like this:
+
+    ipSocketError = An IP socket could not be opened.  This corresponds to a SQL state of ${ss}.
+
+<h3>Add Other Message Catalog Entries Above The Catch-All</h3>
+
+Now that we have a safety valve that will handle all errors, let's add
+a more interesting message.
+
+Suppose we're writing a database application.  `SQLException`s are
+therefore things we are likely to encounter fairly frequently.
+
+`SQLException`s have an `errorCode` property, a `sqlState` property
+and inherit the usual `message` property as well.  Let's further
+assume that we're working with the [MySQL][1] database, just because
+they happen to have a nice [list of error codes][2] that is easy to refer
+to.
+
+We'll put a message catalog entry in that provides a localized and
+informative message for a particular kind of `SQLException` that we
+encounter.
+
+Here's the entry:
+
+    java.sql.SQLException(ss = this.sqlState; errorCode == 1081)$
+    --
+    DatabaseErrorMessages/ipSocketError
+    
+Here, we have an `objexj` pattern that matches when the _last_ item in
+the input list is a `SQLException` whose `errorCode` property equals
+`1081`.  
+
+[1]: http://www.mysql.com/
+[2]: http://dev.mysql.com/doc/refman/5.7/en/error-messages-server.html

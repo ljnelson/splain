@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title>usage.md.vm</title>
+
+</head>
+
+<body>
+
+<!-- -*- markdown -*- -->
+
+<h1>*</h1>
+
+<p>Please note that Velocity and Markdown are fundamentally incompatible
+with each other, so some links in this source document can never
+render properly in HTML.  On behalf of the Velocity and Maven
+developers I apologize for being unable to work around these flaws.</p>
+
+<p>*#</p>
+
+<h1>Usage</h1>
+
+<p>Here's how to use <code>splain</code> in your project in the most common
+scenario, <em>viz.</em> producing intelligent error messages given a chain of
+<code>Throwable</code>s.</p>
+
+<h2>Add splain to Your Classpath</h2>
+
+<p>To use the <code>splain</code> project, please see the
+<a href="dependency-info.html">Dependency Information</a> report for full
+details.</p>
+
+<p>In brief, the following dependency in a Maven project will work:</p>
+
+<pre><code>&lt;dependency&gt;
+  &lt;groupId&gt;${project.groupId}&lt;/groupId&gt;
+  &lt;artifactId&gt;${project.artifactId}&lt;/artifactId&gt;
+  &lt;version&gt;${project.version}&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<h2>Decide Where Your Message Catalog Will Live</h2>
+
+<p><code>splain</code> relies on a <em>message catalog</em>&mdash;a text file containing
+entries consisting of <code>objexj</code> patterns and the messages they select.
+You may place a message catalog anywhere on your application's
+classpath.  (Actually, you may place it anywhere you wish, as long as
+you can figure out how to get a <code>java.io.Reader</code> that will read it.)</p>
+
+<p>You should also give thought to the tier that your message catalog
+will belong to.  Will this message catalog be for diagnosing problems
+at the middleware layer?  Or for selecting a message for display
+on a particular user interface?  Answering these questions will help
+you figure out where to place your message catalog, and how many
+message catalogs you will have in your application.  In terms of bang
+for the buck, <code>splain</code> is probably best for coming up with messages to
+display for particular UIs.</p>
+
+<h2>Decide Where splain Will Actually Run</h2>
+
+<p>This is closely related to the prior point.  Will <code>splain</code> run in a
+Servlet filter?  Will it run in an interceptor of some kind?</p>
+
+<h2>Assemble a Message Catalog</h2>
+
+<p>Begin your message catalog by working backwards.  </p>
+
+<h3>Ensure There Is A Catch-All</h3>
+
+<p>Insert an entry that will (if it is ever reached) match all possible
+errors.  Here is a sample entry in a message catalog that I've decided
+arbitrarily to name <code>Messages.mc</code>, and to locate in my classpath
+somewhere:</p>
+
+<pre><code>^(java.lang.Throwable)
+--
+${$1[0].toString()}
+</code></pre>
+
+<p>The first line is an <code>objexj</code> pattern.  It matches any <code>List</code> whose
+first item ("<code>^</code>") is a <code>Throwable</code>.  Additionally, as you can see from
+the parentheses, it saves a reference to the <code>Throwable</code> so matched.</p>
+
+<p>The second line is a separator (two hyphens) that divides the pattern
+section of this entry from the message.</p>
+
+<p>The third line is the message itself.  In this case, it's not much of
+a localized message.  It is instead a way using MVEL templates to get
+the matched <code>Throwable</code> to print its stack trace.</p>
+
+<p>The first <code>${</code> is the indication that an MVEL expression follows.  The
+<code>$1</code> variable refers to the first capture group match (the sublist of
+<code>Throwable</code>s we matched in our pattern&mdash;in this case this <code>List</code>
+has a size of exactly <code>1</code>.  The index selector, <code>[0]</code> selects the
+first (and only!) item from that sublist, namely the <code>Throwable</code> we're
+interested in.  Finally, the <code>.toString()</code> is just a method
+call on that <code>Throwable</code>, and that will become the final value of the
+MVEL expression.</p>
+
+<p>You can see how this entry will match any <code>List</code> of <code>Throwable</code>s
+handed to it and will produce a suitable message.  The message,
+however, is not very interesting.</p>
+
+</body>
+</html>

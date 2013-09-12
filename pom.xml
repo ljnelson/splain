@@ -301,7 +301,7 @@
     <mavenSitePluginVersion>3.3</mavenSitePluginVersion>
     <mavenSourcePluginVersion>2.2.1</mavenSourcePluginVersion>
     <mavenSurefirePluginVersion>2.16</mavenSurefirePluginVersion>
-    <objexjVersion>1.2.2</objexjVersion>
+    <objexjVersion>1.3.0</objexjVersion>
     <siteMavenPluginVersion>0.8</siteMavenPluginVersion>
     <versionsMavenPluginVersion>2.1</versionsMavenPluginVersion>
 

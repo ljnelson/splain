@@ -335,7 +335,7 @@
 <FONT color="green">332</FONT>       * &lt;p&gt;If this {@link ResourceBundleKey} was constructed with a<a name="line.332"></a>
 <FONT color="green">333</FONT>       * {@code null} resource bundle name, then the key that was supplied<a name="line.333"></a>
 <FONT color="green">334</FONT>       * at construction time is simply returned as is.&lt;/p&gt;<a name="line.334"></a>
-<FONT color="green">335</FONT>       * <a name="line.335"></a>
+<FONT color="green">335</FONT>       *<a name="line.335"></a>
 <FONT color="green">336</FONT>       * &lt;p&gt;This method may return {@code null} in rare edge cases<a name="line.336"></a>
 <FONT color="green">337</FONT>       * only.&lt;/p&gt;<a name="line.337"></a>
 <FONT color="green">338</FONT>       *<a name="line.338"></a>
@@ -475,8 +475,8 @@
 <FONT color="green">472</FONT>        final Object resourceBundleName = this.getResourceBundleName();<a name="line.472"></a>
 <FONT color="green">473</FONT>        if (resourceBundleName != null) {<a name="line.473"></a>
 <FONT color="green">474</FONT>          sb.append(resourceBundleName);<a name="line.474"></a>
-<FONT color="green">475</FONT>        }<a name="line.475"></a>
-<FONT color="green">476</FONT>        sb.append("/");<a name="line.476"></a>
+<FONT color="green">475</FONT>          sb.append("/");<a name="line.475"></a>
+<FONT color="green">476</FONT>        }<a name="line.476"></a>
 <FONT color="green">477</FONT>        final Object key = this.getKey();<a name="line.477"></a>
 <FONT color="green">478</FONT>        if (key != null) {<a name="line.478"></a>
 <FONT color="green">479</FONT>          sb.append(key);<a name="line.479"></a>
@@ -535,10 +535,10 @@
 <FONT color="green">532</FONT>       * Returns a new {@link ResourceBundleKey} that is appropriate for<a name="line.532"></a>
 <FONT color="green">533</FONT>       * the supplied {@code key}.<a name="line.533"></a>
 <FONT color="green">534</FONT>       *<a name="line.534"></a>
-<FONT color="green">535</FONT>       * &lt;p&gt;This method calls the {@link #valueOf(ClassLoader, Control,<a name="line.535"></a>
-<FONT color="green">536</FONT>       * String)} method, passing {@code null} for the first two arguments<a name="line.536"></a>
-<FONT color="green">537</FONT>       * and the supplied {@code key} for the last one, and returns its<a name="line.537"></a>
-<FONT color="green">538</FONT>       * result.&lt;/p&gt;<a name="line.538"></a>
+<FONT color="green">535</FONT>       * &lt;p&gt;This method calls the {@link #valueOf(ClassLoader,<a name="line.535"></a>
+<FONT color="green">536</FONT>       * ResourceBundle.Control, String)} method, passing {@code null} for<a name="line.536"></a>
+<FONT color="green">537</FONT>       * the first two arguments and the supplied {@code key} for the last<a name="line.537"></a>
+<FONT color="green">538</FONT>       * one, and returns its result.&lt;/p&gt;<a name="line.538"></a>
 <FONT color="green">539</FONT>       *<a name="line.539"></a>
 <FONT color="green">540</FONT>       * &lt;p&gt;This method never returns {@code null}.&lt;/p&gt;<a name="line.540"></a>
 <FONT color="green">541</FONT>       *<a name="line.541"></a>

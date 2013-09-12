@@ -35,6 +35,10 @@ Decide Where Your Message Catalog Will Live
 
 `splain` relies on a _message catalog_&mdash;a text file containing
 entries consisting of `objexj` patterns and the messages they select.
+The format of such a file is detailed in the <a
+href="apidocs/com/edugility/splain/io/MessageFactoryReader.html#read()">documentation
+for the <code>MessageFactoryReader#read()</code> method</a>.
+
 You may place a message catalog anywhere on your application's
 classpath.  (Actually, you may place it anywhere you wish, as long as
 you can figure out how to get a `java.io.Reader` that will read it.)
@@ -133,7 +137,85 @@ Here's the entry:
     
 Here, we have an `objexj` pattern that matches when the _last_ item in
 the input list is a `SQLException` whose `errorCode` property equals
-`1081`.  
+`1081`.  Should this pattern match, we instruct `splain` to attempt to
+locate a resource named `ipSocketError` in a `ResourceBundle`
+named `DatabaseErrorMessages` accessible on the classpath.
+
+We place this entry above the "catch-all" entry, so that it will not
+be shadowed by the catch-all entry.
+
+Incorporate splain Into Your Code
+---
+
+Suppose in our web tier we run some business logic and catch
+`Exception`, like this:
+
+    // splain initialization needs to happen before this block
+    
+    try {
+      frobnicator.frobnicate();
+    } catch (final Exception exception) {
+      // splain execution will go here
+    }
+    
+Suppose further that for various reasons we want the
+client-appropriate message to be produced here (there are other
+choices, ranging from error message production in Javascript on the
+browser to no message at all).
+
+Finally, suppose that for the purposes of this discussion you and I
+know that the exception we're getting has a `SQLException` at the
+bottom of it with a vendor error code of `1081`.  Obviously our code
+here does not know that.
+
+Here's how it would look, put all together (I've also used the
+(convenient) [`ThrowableList` class][3] to produce a `List`
+implementation out of a `Throwable` and its chain of causes; you may
+do this however you wish):
+
+    // somewhere in an init() method somewhere:
+    MessageFactoryReader mfr = null;
+    final MessageFactory mf;
+    MessageFactory tempMf = null;
+    try {
+      mfr = new MessageFactoryReader("Messages.mc");
+      tempMf = mfr.read();
+    } catch (final IOException handleMe) {
+      // handle appropriately
+    } catch (final ParseException handleMeToo) {
+      // handle appropriately
+    } finally {
+      mf = tempMf;
+      if (mfr != null) {
+        try {
+          mfr.close();
+        } catch (final IOException ohWell) {
+          // log appropriately
+        }
+      }
+    }
+    assert mf != null;
+
+    try {
+      frobnicator.frobnicate();
+    } catch (final Exception exception) {
+      final Locale locale = httpRequest.getLocale();
+      final Object message = mf.getMessage(new ThrowableList(exception), locale);
+      assert message != null;
+      // serve message up to the client
+    }
+    
+In this code snippet, `message` would be the following `String`:
+
+> An IP socket could not be opened.  This corresponds to a SQL state of 08S01.
+
+You'll notice that `${ss}` has been substituted with the
+`SQLException`'s `sqlState` property value.
+
+You'll also notice that the message itself came from the appropriate
+resource bundle, and that it is appropriate to the exception chain we
+received.  That's what `splain` is all about.
 
 [1]: http://www.mysql.com/
 [2]: http://dev.mysql.com/doc/refman/5.7/en/error-messages-server.html
+[3]: http://ljnelson.github.io/edugility-throwables/apidocs/com/edugility/throwables/ThrowableList.html

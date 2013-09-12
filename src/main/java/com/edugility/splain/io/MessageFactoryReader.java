@@ -125,9 +125,36 @@ public class MessageFactoryReader implements Closeable {
   /**
    * Creates a new {@link MessageFactoryReader}.
    *
+   * <p>This constructor calls the {@link
+   * #MessageFactoryReader(String, ClassLoader,
+   * ResourceBundle.Control)} constructor, passing {@code
+   * resourceName} as the first argument and {@code null} for the
+   * remaining arguments.</p>
+   *
+   * @param resourceName the name of a message catalog resource to be
+   * loaded via the {@link ClassLoader#getResource(String)} method;
+   * must not be {@code null}
+   *
+   * @exception IllegalArgumentException if {@code resourceName} is
+   * {@code null} or identifies a resource that could not be opened
+   *
+   * @exception IOException if an input or output error occurs
+   */
+  public MessageFactoryReader(final String resourceName) throws IOException {
+    this(resourceName, null, null);
+  }
+
+  /**
+   * Creates a new {@link MessageFactoryReader}.
+   *
    * @param resourceName the name of a resource to be loaded via the
    * {@link ClassLoader#getResource(String)} method; must not be
    * {@code null}
+   *
+   * @param classLoader the {@link ClassLoader} used to load
+   * resources; may be {@code null} in which case the {@linkplain
+   * Thread#getContextClassLoader() context <code>ClassLoader</code>}
+   * will be used instead
    *
    * @param rbControl a {@link Control} to use when {@linkplain
    * ResourceBundle#getBundle(String, Locale, ClassLoader,
@@ -145,11 +172,6 @@ public class MessageFactoryReader implements Closeable {
     if (resourceName == null) {
       throw new IllegalArgumentException("resourceName", new NullPointerException("resourceName"));
     }
-    final InputStream resource = this.getResourceAsStream(resourceName);
-    if (resource == null) {
-      throw new IllegalArgumentException("resourceName", new IllegalStateException("resource not found"));
-    }
-    this.reader = new LineNumberReader(new BufferedReader(new InputStreamReader(resource)));
     if (classLoader == null) {
       classLoader = Thread.currentThread().getContextClassLoader();
       if (classLoader == null) {
@@ -158,6 +180,11 @@ public class MessageFactoryReader implements Closeable {
     }
     assert classLoader != null;
     this.classLoader = classLoader;
+    final InputStream resource = this.getResourceAsStream(resourceName);
+    if (resource == null) {
+      throw new IllegalArgumentException("resourceName", new IllegalStateException("resource not found"));
+    }
+    this.reader = new LineNumberReader(new BufferedReader(new InputStreamReader(resource)));
     if (rbControl == null) {
       this.control = Control.getControl(Control.FORMAT_DEFAULT);
     } else {
@@ -168,8 +195,32 @@ public class MessageFactoryReader implements Closeable {
   /**
    * Creates a new {@link MessageFactoryReader}.
    *
+   * <p>This constructor calls the {@link
+   * #MessageFactoryReader(Reader, ClassLoader,
+   * ResourceBundle.Control)} constructor, passing {@code reader} as
+   * the first argument and {@code null} for the remaining
+   * arguments.</p>
+   *
    * @param reader the {@link Reader} to read from; must not be {@code
    * null}
+   *
+   * @exception IllegalArgumentException if {@code reader} is {@code
+   * null}
+   */
+  public MessageFactoryReader(final Reader reader) {
+    this(reader, null, null);
+  }
+
+  /**
+   * Creates a new {@link MessageFactoryReader}.
+   *
+   * @param reader the {@link Reader} to read from; must not be {@code
+   * null}
+   *
+   * @param classLoader the {@link ClassLoader} used to load
+   * resources; may be {@code null} in which case the {@linkplain
+   * Thread#getContextClassLoader() context <code>ClassLoader</code>}
+   * will be used instead
    *
    * @param rbControl the {@link Control} to use when loading new
    * {@link ResourceBundle}s; if {@code null} then {@link

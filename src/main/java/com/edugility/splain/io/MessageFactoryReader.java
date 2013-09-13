@@ -36,6 +36,9 @@ import java.io.LineNumberReader;
 import java.io.Reader;
 import java.io.Serializable; // for javadoc only
 
+import java.net.URI;
+import java.net.URL;
+
 import java.sql.SQLException; // for javadoc only
 
 import java.text.ParseException;
@@ -67,6 +70,12 @@ import com.edugility.splain.ResourceBundleKey;
  */
 public class MessageFactoryReader implements Closeable {
 
+
+  /*
+   * Static fields.
+   */
+
+
   /**
    * This class' version for {@linkplain Serializable serialization
    * purposes}.
@@ -81,32 +90,11 @@ public class MessageFactoryReader implements Closeable {
    */
   private static final String LS = System.getProperty("line.separator", "\n");
 
-  /**
-   * A state that the internal parser can be in.
-   *
-   * @author <a href="http://about.me/lairdnelson"
-   * target="_parent">Laird Nelson</a>
+
+  /*
+   * Instance fields.
    */
-  private enum State {
 
-    /**
-     * A normal state.  The parser will be expecting comment lines or
-     * lines describing patterns.
-     */
-    NORMAL,
-
-    /**
-     * A state in which the parser will be looking for patterns or
-     * comments.
-     */
-    MATCHERS,
-
-    /**
-     * A state in which the parser will attempt to read the message
-     * key that is affiliated with a set of patterns.
-     */
-    MESSAGE
-  }
 
   /**
    * The {@link LineNumberReader} that is responsible for reading the
@@ -114,6 +102,11 @@ public class MessageFactoryReader implements Closeable {
    */
   private final LineNumberReader reader;
 
+  /**
+   * The {@link ClassLoader} used by this {@link MessageFactoryReader}
+   * to {@linkplain #getResourceAsStream(String) load resources}.
+   * This field is never {@code null}.
+   */
   private final ClassLoader classLoader;
 
   /**
@@ -121,6 +114,12 @@ public class MessageFactoryReader implements Closeable {
    * field is never {@code null}.
    */
   private final Control control;
+
+
+  /*
+   * Constructors.
+   */
+
 
   /**
    * Creates a new {@link MessageFactoryReader}.
@@ -181,6 +180,71 @@ public class MessageFactoryReader implements Closeable {
     assert classLoader != null;
     this.classLoader = classLoader;
     final InputStream resource = this.getResourceAsStream(resourceName);
+    if (resource == null) {
+      throw new IllegalArgumentException("resourceName", new IllegalStateException("resource not found"));
+    }
+    this.reader = new LineNumberReader(new BufferedReader(new InputStreamReader(resource)));
+    if (rbControl == null) {
+      this.control = Control.getControl(Control.FORMAT_DEFAULT);
+    } else {
+      this.control = rbControl;
+    }
+  }
+
+  /**
+   * Creates a new {@link MessageFactoryReader}.
+   *
+   * <p>This constructor calls the {@link
+   * #MessageFactoryReader(URI, ClassLoader,
+   * ResourceBundle.Control)} constructor, passing {@code uri} as
+   * the first argument and {@code null} for the remaining
+   * arguments.</p>
+   *
+   * @param uri the {@link URI} to read from; must not be {@code
+   * null}
+   *
+   * @exception IllegalArgumentException if {@code reader} is {@code
+   * null}
+   */
+  public MessageFactoryReader(final URI uri) throws IOException {
+    this(uri, null, null);
+  }
+
+  /**
+   * Creates a new {@link MessageFactoryReader}.
+   *
+   * @param uri the {@link URI} to read from; must not be {@code
+   * null}
+   *
+   * @param classLoader the {@link ClassLoader} used to load
+   * resources; may be {@code null} in which case the {@linkplain
+   * Thread#getContextClassLoader() context <code>ClassLoader</code>}
+   * will be used instead
+   *
+   * @param rbControl the {@link Control} to use when loading new
+   * {@link ResourceBundle}s; if {@code null} then {@link
+   * Control#getControl(List)
+   * Control.getControl(Control.FORMAT_DEFAULT)} will be used instead
+   *
+   * @exception IllegalArgumentException if {@code reader} is {@code
+   * null}
+   */
+  public MessageFactoryReader(final URI uri, ClassLoader classLoader, final Control rbControl) throws IOException {
+    super();
+    if (uri == null) {
+      throw new IllegalArgumentException("uri", new NullPointerException("uri"));
+    }
+    if (classLoader == null) {
+      classLoader = Thread.currentThread().getContextClassLoader();
+      if (classLoader == null) {
+        classLoader = this.getClass().getClassLoader();
+      }
+    }
+    assert classLoader != null;
+    this.classLoader = classLoader;
+    final URL url = uri.toURL();
+    assert url != null;
+    final InputStream resource = url.openStream();
     if (resource == null) {
       throw new IllegalArgumentException("resourceName", new IllegalStateException("resource not found"));
     }
@@ -257,6 +321,12 @@ public class MessageFactoryReader implements Closeable {
     }
   }
 
+
+  /*
+   * Instance methods.
+   */
+
+
   /**
    * Returns the {@link Control} to use for {@linkplain
    * ResourceBundle#getBundle(String, Locale, ClassLoader,
@@ -273,8 +343,8 @@ public class MessageFactoryReader implements Closeable {
   /**
    * Reads from this {@link MessageFactoryReader}'s {@linkplain
    * #MessageFactoryReader(Reader, ClassLoader,
-   * ResourceBundle.Control) affiliated <tt>Reader</tt>} and builds a
-   * {@link MessageFactoryReader} from the results.
+   * ResourceBundle.Control) affiliated <code>Reader</code>} and
+   * builds a {@link MessageFactoryReader} from the results.
    *
    * <p>To avoid resource leaks, this {@link MessageFactoryReader}
    * <strong>must</strong> be {@linkplain #close() closed} at some
@@ -569,6 +639,39 @@ public class MessageFactoryReader implements Closeable {
       throw new IllegalArgumentException("resourceName", new IllegalStateException("resource not found"));
     }
     return resource;
+  }
+
+
+  /*
+   * Inner and nested classes.
+   */
+
+
+  /**
+   * A state that the internal parser can be in.
+   *
+   * @author <a href="http://about.me/lairdnelson"
+   * target="_parent">Laird Nelson</a>
+   */
+  private enum State {
+
+    /**
+     * A normal state.  The parser will be expecting comment lines or
+     * lines describing patterns.
+     */
+    NORMAL,
+
+    /**
+     * A state in which the parser will be looking for patterns or
+     * comments.
+     */
+    MATCHERS,
+
+    /**
+     * A state in which the parser will attempt to read the message
+     * key that is affiliated with a set of patterns.
+     */
+    MESSAGE
   }
 
 }

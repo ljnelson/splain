@@ -1,0 +1,8 @@
+2013-09-13  Laird Nelson  <ljnelson@gmail.com>
+
+	* src/main/java/com/edugility/splain/io/MessageFactoryReader.java:
+	Added constructors taking URIs.
+
+	* src/main/java/com/edugility/splain/io/MessageFactoryReader.java:
+	Added documentation.
+

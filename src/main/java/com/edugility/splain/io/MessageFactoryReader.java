@@ -368,8 +368,9 @@ public class MessageFactoryReader implements Closeable {
    * <p>A pattern is a textual representation of an {@linkplain
    * Pattern objexj <code>Pattern</code>}.  It resembles a regular
    * expression.  Please see the <a
-   * href="http://ljnelson.github.io/objexj/syntax.html">objexj Syntax
-   * Guide</a> for more information.</p>
+   * href="http://ljnelson.github.io/objexj/syntax.html"
+   * target="_parent">objexj Syntax Guide</a> for more
+   * information.</p>
    *
    * <p>A resource bundle key is the name of a classpath resource
    * identifying a {@link ResourceBundle}, followed by a solidus

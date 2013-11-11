@@ -562,7 +562,7 @@ public class MessageFactory<T> implements Serializable {
       if (other == this) {
         return true;
       } else if (other != null && this.getClass().equals(other.getClass())) {
-        final Selector him = (Selector)other;
+        final Selector<?> him = (Selector<?>)other;
         final Object key = this.getKey();
         if (key == null) {
           if (him.getKey() != null) {
